@@ -9,50 +9,93 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { -webkit-tap-highlight-color: transparent; background-color: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; min-height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
-        #root { display: flex; flex-direction: column; min-height: 100vh; }
-        .game-container { display: flex; flex-direction: column; flex: 1; transition: background-color 1s ease; }
+        
+        /* スマホのブラウザバー対策 */
+        body { 
+            -webkit-tap-highlight-color: transparent; 
+            background-color: #f8fafc; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
+            min-height: 100dvh; 
+            overflow-y: auto; /* スクロールを許可 */
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        #root { display: flex; flex-direction: column; min-height: 100%; flex: 1; }
+        
+        .game-container { 
+            display: flex; 
+            flex-direction: column; 
+            flex: 1; 
+            transition: background-color 1s ease; 
+            width: 100%;
+        }
+        
         .game-container.bg-rose { background-color: #fff1f2; }
         .game-container.bg-indigo { background-color: #eef2ff; }
         .game-container.bg-slate { background-color: #f8fafc; }
-        .header { padding-top: 1rem; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+        
+        .header { padding-top: 1.5rem; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
         .game-title { font-size: 1.5rem; font-weight: 900; color: #1e293b; font-style: italic; text-transform: uppercase; letter-spacing: 0.3em; }
-        .status-container { margin-top: 0.5rem; display: flex; flex-direction: column; align-items: center; padding: 0 1rem; width: 100%; flex-shrink: 0; min-height: 80px; justify-content: center; }
+        
+        .status-container { margin-top: 1rem; display: flex; flex-direction: column; align-items: center; padding: 0 1rem; width: 100%; flex-shrink: 0; min-height: 100px; justify-content: center; }
         .victory-container { display: flex; flex-direction: column; align-items: center; z-index: 50; animation: slideInUp 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49) forwards; }
         .victory-badge { padding: 0.75rem 2rem; border-radius: 9999px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 4px solid white; color: white; }
         .victory-badge.red { background-color: #f43f5e; }
         .victory-badge.blue { background-color: #6366f1; }
+        
         .reset-button { margin-top: 0.75rem; padding: 0.5rem 1.5rem; background-color: #1e293b; color: white; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; border: none; cursor: pointer; }
-        .turn-indicator { background-color: rgba(255, 255, 255, 0.95); padding: 0.375rem 1.25rem; border-radius: 9999px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; display: flex; align-items: center; gap: 0.75rem; }
+        
+        .turn-indicator { background-color: rgba(255, 255, 255, 0.95); padding: 0.5rem 1.5rem; border-radius: 9999px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; display: flex; align-items: center; gap: 1rem; }
         .player-indicator { display: flex; align-items: center; gap: 0.5rem; opacity: 0.3; transition: all 0.3s ease; }
-        .player-indicator.active { opacity: 1; font-weight: 700; transform: scale(1.05); }
-        .player-dot { width: 0.75rem; height: 0.75rem; border-radius: 50%; }
+        .player-indicator.active { opacity: 1; font-weight: 700; transform: scale(1.1); }
+        .player-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; }
         .player-dot.red { background-color: #f43f5e; }
         .player-dot.blue { background-color: #6366f1; }
-        .board-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; touch-action: none; overflow: visible; }
-        .board-svg { width: 100%; height: auto; max-height: 55vh; overflow: visible; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
+
+        .board-container { 
+            flex: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 1rem 0.5rem; 
+            touch-action: none; /* ゲーム盤面のみ誤操作防止 */
+            min-height: 350px;
+        }
+        
+        .board-svg { width: 100%; height: auto; max-height: 50vh; overflow: visible; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
+        
         .tile { transition: all 0.3s ease; fill: white; stroke: #e2e8f0; stroke-width: 1px; }
         .tile.selected-origin { fill: #fee2e2; stroke: #f43f5e; stroke-width: 2px; }
         .tile.destination-hint { fill: #f0fdf4; stroke: #34d399; stroke-dasharray: 2; }
         .tile.victory-tile { fill: #fff1f2; stroke: #fda4af; stroke-width: 4px; }
         .tile.victory-tile.blue { fill: #eef2ff; stroke: #a5b4fc; }
         .tile.faded { opacity: 0.2; }
+        
         .piece-main { transition: all 0.3s ease; stroke: rgba(0,0,0,0.1); }
         .piece-main.red { fill: #f43f5e; }
         .piece-main.blue { fill: #6366f1; }
         .piece-main.selected { stroke: white; stroke-width: 4px; filter: brightness(1.1); }
         .piece-main.victory-piece { animation: piece-pulse 1.2s ease-in-out infinite; }
+        
         @keyframes piece-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
         @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes confetti-fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0; } }
         
-        /* ルール周りのスタイル */
-        .rules-container { padding: 0 1rem 1.5rem; width: 100%; max-width: 32rem; margin: 0 auto; flex-shrink: 0; }
-        .rules-card { background: white; padding: 1rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 0.75rem; }
-        .goal-box { background: #fffbeb; padding: 0.75rem; border-radius: 0.75rem; display: flex; gap: 0.5rem; align-items: center; font-size: 0.75rem; color: #78350f; border: 1px solid #fde68a; }
+        /* ルール周りのスタイル - 下部の余白を強化 */
+        .rules-container { 
+            padding: 1rem 1rem 4rem; /* 下部に大きなパディングを確保 */
+            padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+            width: 100%; 
+            max-width: 32rem; 
+            margin: 0 auto; 
+            flex-shrink: 0; 
+        }
+        .rules-card { background: white; padding: 1rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; gap: 0.75rem; }
+        .goal-box { background: #fffbeb; padding: 0.75rem; border-radius: 0.75rem; display: flex; gap: 0.5rem; align-items: center; font-size: 0.8rem; color: #78350f; border: 1px solid #fde68a; }
         .steps-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-        .step-item { display: flex; gap: 0.5rem; align-items: center; color: #64748b; font-size: 0.65rem; }
-        .step-number { width: 1.25rem; height: 1.25rem; border-radius: 50%; background-color: #1e293b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+        .step-item { display: flex; gap: 0.5rem; align-items: center; color: #64748b; font-size: 0.7rem; }
+        .step-number { width: 1.35rem; height: 1.35rem; border-radius: 50%; background-color: #1e293b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
     </style>
 </head>
 <body>
@@ -211,7 +254,7 @@
                                     <div style={{width:1, height:12, background:'#e2e8f0'}} />
                                     <div className={`player-indicator ${turn === 'blue' ? 'active' : ''}`}><div className="player-dot blue" />青</div>
                                 </div>
-                                <div style={{fontSize:10, fontWeight:800, color:'#94a3b8', marginTop:8, textTransform:'uppercase'}}>
+                                <div style={{fontSize:11, fontWeight:800, color:'#94a3b8', marginTop:10, textTransform:'uppercase', letterSpacing: '0.1em'}}>
                                     {phase === 'move_token' ? "1. コマを滑らせる" : "2. タイルを動かす"}
                                 </div>
                             </div>
@@ -262,7 +305,7 @@
                     <div className="rules-container">
                         <div className="rules-card">
                             <div className="goal-box">
-                                <span style={{fontSize:14}}>🏆</span>
+                                <span style={{fontSize:16}}>🏆</span>
                                 <p>自分のコマを <strong>3つ連結</strong> させれば勝ち!</p>
                             </div>
                             <div className="steps-grid">
