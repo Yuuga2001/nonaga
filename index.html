@@ -3,105 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>NONAGA</title>
+    <title>NONAGA - Final Refined</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { 
-            -webkit-tap-highlight-color: transparent; 
-            background-color: #f8fafc; 
-            font-family: 'Inter', system-ui, sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            min-height: 100dvh; 
-            overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        #root {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        .shadow-soft { 
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); 
-        }
-        @keyframes piece-pulse { 
-            0%, 100% { transform: scale(1); } 
-            50% { transform: scale(1.15); } 
-        }
-        @keyframes slideInUp { 
-            0% { transform: translateY(10px); opacity: 0; } 
-            100% { transform: translateY(0); opacity: 1; } 
-        }
-        @keyframes confetti-fall { 
-            0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; } 
-            10% { opacity: 1; } 
-            100% { transform: translateY(110vh) rotate(360deg); opacity: 0; } 
-        }
-        .game-title { 
-            letter-spacing: 0.3em; 
-            text-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { -webkit-tap-highlight-color: transparent; background-color: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; min-height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+        #root { display: flex; flex-direction: column; min-height: 100vh; }
+        .game-container { display: flex; flex-direction: column; flex: 1; transition: background-color 1s ease; }
+        .game-container.bg-rose { background-color: #fff1f2; }
+        .game-container.bg-indigo { background-color: #eef2ff; }
+        .game-container.bg-slate { background-color: #f8fafc; }
+        .header { padding-top: 1rem; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+        .game-title { font-size: 1.5rem; font-weight: 900; color: #1e293b; font-style: italic; text-transform: uppercase; letter-spacing: 0.3em; }
+        .status-container { margin-top: 0.5rem; display: flex; flex-direction: column; align-items: center; padding: 0 1rem; width: 100%; flex-shrink: 0; min-height: 80px; justify-content: center; }
+        .victory-container { display: flex; flex-direction: column; align-items: center; z-index: 50; animation: slideInUp 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49) forwards; }
+        .victory-badge { padding: 0.75rem 2rem; border-radius: 9999px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 4px solid white; color: white; }
+        .victory-badge.red { background-color: #f43f5e; }
+        .victory-badge.blue { background-color: #6366f1; }
+        .reset-button { margin-top: 0.75rem; padding: 0.5rem 1.5rem; background-color: #1e293b; color: white; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; border: none; cursor: pointer; }
+        .turn-indicator { background-color: rgba(255, 255, 255, 0.95); padding: 0.375rem 1.25rem; border-radius: 9999px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; display: flex; align-items: center; gap: 0.75rem; }
+        .player-indicator { display: flex; align-items: center; gap: 0.5rem; opacity: 0.3; transition: all 0.3s ease; }
+        .player-indicator.active { opacity: 1; font-weight: 700; transform: scale(1.05); }
+        .player-dot { width: 0.75rem; height: 0.75rem; border-radius: 50%; }
+        .player-dot.red { background-color: #f43f5e; }
+        .player-dot.blue { background-color: #6366f1; }
+        .board-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; touch-action: none; overflow: visible; }
+        .board-svg { width: 100%; height: auto; max-height: 55vh; overflow: visible; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
+        .tile { transition: all 0.3s ease; fill: white; stroke: #e2e8f0; stroke-width: 1px; }
+        .tile.selected-origin { fill: #fee2e2; stroke: #f43f5e; stroke-width: 2px; }
+        .tile.destination-hint { fill: #f0fdf4; stroke: #34d399; stroke-dasharray: 2; }
+        .tile.victory-tile { fill: #fff1f2; stroke: #fda4af; stroke-width: 4px; }
+        .tile.victory-tile.blue { fill: #eef2ff; stroke: #a5b4fc; }
+        .tile.faded { opacity: 0.2; }
+        .piece-main { transition: all 0.3s ease; stroke: rgba(0,0,0,0.1); }
+        .piece-main.red { fill: #f43f5e; }
+        .piece-main.blue { fill: #6366f1; }
+        .piece-main.selected { stroke: white; stroke-width: 4px; filter: brightness(1.1); }
+        .piece-main.victory-piece { animation: piece-pulse 1.2s ease-in-out infinite; }
+        @keyframes piece-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes confetti-fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0; } }
+        
+        /* ルール周りのスタイル */
+        .rules-container { padding: 0 1rem 1.5rem; width: 100%; max-width: 32rem; margin: 0 auto; flex-shrink: 0; }
+        .rules-card { background: white; padding: 1rem; border-radius: 1rem; border: 1px solid #f1f5f9; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 0.75rem; }
+        .goal-box { background: #fffbeb; padding: 0.75rem; border-radius: 0.75rem; display: flex; gap: 0.5rem; align-items: center; font-size: 0.75rem; color: #78350f; border: 1px solid #fde68a; }
+        .steps-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+        .step-item { display: flex; gap: 0.5rem; align-items: center; color: #64748b; font-size: 0.65rem; }
+        .step-number { width: 1.25rem; height: 1.25rem; border-radius: 50%; background-color: #1e293b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
     </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
-        
         const HEX_SIZE = 38;
         const DIRECTIONS = [{q:1,r:0},{q:1,r:-1},{q:0,r:-1},{q:-1,r:0},{q:-1,r:1},{q:0,r:1}];
         const coordsKey = (q, r) => `${q},${r}`;
-
-        const INITIAL_TILES = [
-            {q:0, r:0}, {q:1, r:0}, {q:1, r:-1}, {q:0, r:-1}, {q:-1, r:0}, {q:-1, r:1}, {q:0, r:1},
-            {q:2, r:0}, {q:2, r:-1}, {q:2, r:-2}, {q:1, r:-2}, {q:0, r:-2}, 
-            {q:-1, r:-1}, {q:-2, r:0}, {q:-2, r:1}, {q:-2, r:2}, {q:-1, r:2}, {q:0, r:2}, {q:1, r:1}
-        ];
-
-        const PLAYERS = {
-            RED: { id: 'red', color: 'fill-rose-500', bg: 'bg-rose-500', border: 'stroke-rose-400', light: 'fill-rose-50', name: '赤' },
-            BLUE: { id: 'blue', color: 'fill-indigo-500', bg: 'bg-indigo-500', border: 'stroke-indigo-400', light: 'fill-indigo-50', name: '青' }
-        };
-
+        const INITIAL_TILES = [{q:0, r:0}, {q:1, r:0}, {q:1, r:-1}, {q:0, r:-1}, {q:-1, r:0}, {q:-1, r:1}, {q:0, r:1}, {q:2, r:0}, {q:2, r:-1}, {q:2, r:-2}, {q:1, r:-2}, {q:0, r:-2}, {q:-1, r:-1}, {q:-2, r:0}, {q:-2, r:1}, {q:-2, r:2}, {q:-1, r:2}, {q:0, r:2}, {q:1, r:1}];
+        
         const INITIAL_PIECES = [
-            { id: 'r1', player: 'red', q: -1, r: -1 }, 
-            { id: 'r2', player: 'red', q: 1, r: -2 }, 
-            { id: 'r3', player: 'red', q: 2, r: 0 },
-            { id: 'b1', player: 'blue', q: -2, r: 0 }, 
-            { id: 'b2', player: 'blue', q: -1, r: 2 }, 
-            { id: 'b3', player: 'blue', q: 1, r: 1 }
+            { id: 'r1', player: 'red',  q: 2,  r: -2 },
+            { id: 'b1', player: 'blue', q: 2,  r: 0  },
+            { id: 'r2', player: 'red',  q: 0,  r: 2  },
+            { id: 'b2', player: 'blue', q: -2, r: 2  },
+            { id: 'r3', player: 'red',  q: -2, r: 0  },
+            { id: 'b3', player: 'blue', q: 0,  r: -2 }
         ];
 
         const Confetti = ({ winner }) => {
-            const dots = useMemo(() => [...Array(40)].map((_, i) => ({
-                id: i, 
-                left: Math.random() * 100 + '%', 
-                delay: Math.random() * 4 + 's', 
-                size: (Math.random() * 8 + 4) + 'px',
-                color: Math.random() > 0.5 ? (winner === 'red' ? 'bg-rose-400' : 'bg-indigo-400') : 'bg-amber-300'
-            })), [winner]);
-            
-            return (
-                <div className="fixed inset-0 pointer-events-none z-50">
-                    {dots.map(d => (
-                        <div 
-                            key={d.id} 
-                            className={`fixed ${d.color} rounded-sm`}
-                            style={{ 
-                                left: d.left, 
-                                width: d.size, 
-                                height: d.size,
-                                animation: `confetti-fall 4s linear infinite`,
-                                animationDelay: d.delay
-                            }} 
-                        />
-                    ))}
-                </div>
-            );
+            const dots = useMemo(() => [...Array(40)].map((_, i) => ({ id: i, left: Math.random() * 100 + '%', delay: Math.random() * 4 + 's', size: (Math.random() * 8 + 4) + 'px', color: winner === 'red' ? '#fb7185' : '#818cf8' })), [winner]);
+            return (<div style={{position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 100}}>{dots.map(d => (<div key={d.id} style={{ position: 'absolute', left: d.left, width: d.size, height: d.size, backgroundColor: d.color, borderRadius: '2px', animation: `confetti-fall 4s linear infinite`, animationDelay: d.delay }} />))}</div>);
         };
 
         const NonagaGame = () => {
@@ -116,120 +90,55 @@
             const [animatingPiece, setAnimatingPiece] = useState(null);
             const animationFrameRef = useRef(null);
 
-            const resetGame = () => {
-                setTiles(INITIAL_TILES);
-                setPieces(INITIAL_PIECES);
-                setTurn('red');
-                setPhase('move_token');
-                setSelectedId(null);
-                setWinner(null);
-                setVictoryLine([]);
-                setIsAnimating(false);
-                setAnimatingPiece(null);
-            };
-
+            const resetGame = () => { setTiles(INITIAL_TILES); setPieces(INITIAL_PIECES); setTurn('red'); setPhase('move_token'); setSelectedId(null); setWinner(null); setVictoryLine([]); setIsAnimating(false); setAnimatingPiece(null); };
             const tileMap = useMemo(() => new Set(tiles.map(t => coordsKey(t.q, t.r))), [tiles]);
-            const pieceMap = useMemo(() => {
-                const map = new Map();
-                pieces.forEach(p => map.set(coordsKey(p.q, p.r), p));
-                return map;
-            }, [pieces]);
-
-            const hexToPixel = (q, r) => ({ 
-                x: HEX_SIZE * (3/2 * q), 
-                y: HEX_SIZE * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r) 
-            });
-
+            const pieceMap = useMemo(() => { const map = new Map(); pieces.forEach(p => map.set(coordsKey(p.q, p.r), p)); return map; }, [pieces]);
+            const hexToPixel = (q, r) => ({ x: HEX_SIZE * (3/2 * q), y: HEX_SIZE * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r) });
+            
             const viewBounds = useMemo(() => {
-                const padding = 50;
+                const padding = 60;
                 let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
                 tiles.forEach(t => {
                     const { x, y } = hexToPixel(t.q, t.r);
                     minX = Math.min(minX, x); maxX = Math.max(maxX, x);
                     minY = Math.min(minY, y); maxY = Math.max(maxY, y);
                 });
-                return { 
-                    x: minX - padding, 
-                    y: minY - padding, 
-                    w: (maxX - minX) + padding * 2, 
-                    h: (maxY - minY) + padding * 2 
-                };
+                return { x: minX - padding, y: minY - padding, w: (maxX - minX) + padding * 2, h: (maxY - minY) + padding * 2 };
             }, [tiles]);
 
             const getVictoryCoords = (currentPieces, player) => {
                 const p = currentPieces.filter(cp => cp.player === player);
                 const isAdj = (a, b) => DIRECTIONS.some(d => a.q + d.q === b.q && a.r + d.r === b.r);
                 const c01 = isAdj(p[0], p[1]), c12 = isAdj(p[1], p[2]), c20 = isAdj(p[2], p[0]);
-                if ((c01 ? 1:0) + (c12 ? 1:0) + (c20 ? 1:0) >= 2) {
-                    return p.map(item => coordsKey(item.q, item.r));
-                }
+                if ((c01 ? 1:0) + (c12 ? 1:0) + (c20 ? 1:0) >= 2) return p.map(item => coordsKey(item.q, item.r));
                 return null;
             };
 
-            // イージング関数（滑らかな減速）
-            const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-
-            const animatePieceMove = (pieceId, fromQ, fromR, toQ, toR, duration = 500) => {
+            const animatePieceMove = (pieceId, fromQ, fromR, toQ, toR) => {
                 const startTime = performance.now();
                 const fromPos = hexToPixel(fromQ, fromR);
                 const toPos = hexToPixel(toQ, toR);
-
                 const animate = (currentTime) => {
                     const elapsed = currentTime - startTime;
-                    const progress = Math.min(elapsed / duration, 1);
-                    const eased = easeOutCubic(progress);
-
-                    const currentX = fromPos.x + (toPos.x - fromPos.x) * eased;
-                    const currentY = fromPos.y + (toPos.y - fromPos.y) * eased;
-
-                    setAnimatingPiece({
-                        id: pieceId,
-                        x: currentX,
-                        y: currentY
-                    });
-
-                    if (progress < 1) {
-                        animationFrameRef.current = requestAnimationFrame(animate);
-                    } else {
-                        setAnimatingPiece(null);
-                        setIsAnimating(false);
-                        
-                        const nextPieces = pieces.map(p => 
-                            p.id === pieceId ? { ...p, q: toQ, r: toR } : p
-                        );
+                    const progress = Math.min(elapsed / 450, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3);
+                    setAnimatingPiece({ id: pieceId, x: fromPos.x + (toPos.x - fromPos.x) * eased, y: fromPos.y + (toPos.y - fromPos.y) * eased });
+                    if (progress < 1) animationFrameRef.current = requestAnimationFrame(animate);
+                    else {
+                        setAnimatingPiece(null); setIsAnimating(false);
+                        const nextPieces = pieces.map(p => p.id === pieceId ? { ...p, q: toQ, r: toR } : p);
                         setPieces(nextPieces);
-                        
                         const winCoords = getVictoryCoords(nextPieces, turn);
-                        if (winCoords) { 
-                            setWinner(turn); 
-                            setVictoryLine(winCoords); 
-                            setPhase('ended'); 
-                        } else { 
-                            setPhase('move_tile'); 
-                            setSelectedId(null); 
-                        }
+                        if (winCoords) { setWinner(turn); setVictoryLine(winCoords); setPhase('ended'); }
+                        else { setPhase('move_tile'); setSelectedId(null); }
                     }
                 };
-
                 animationFrameRef.current = requestAnimationFrame(animate);
             };
 
-            useEffect(() => {
-                return () => {
-                    if (animationFrameRef.current) {
-                        cancelAnimationFrame(animationFrameRef.current);
-                    }
-                };
-            }, []);
-
-            const handlePieceClick = (piece) => {
-                if (winner || phase !== 'move_token' || piece.player !== turn || isAnimating) return;
-                setSelectedId(selectedId === piece.id ? null : piece.id);
-            };
-
+            const handlePieceClick = (piece) => { if (winner || phase !== 'move_token' || piece.player !== turn || isAnimating) return; setSelectedId(selectedId === piece.id ? null : piece.id); };
             const handleTileClick = (tile, index) => {
                 if (winner || isAnimating) return;
-                
                 if (phase === 'move_token' && typeof selectedId === 'string') {
                     const piece = pieces.find(p => p.id === selectedId);
                     const moves = DIRECTIONS.map(dir => {
@@ -237,223 +146,112 @@
                         while (true) {
                             const nQ = curQ + dir.q, nR = curR + dir.r;
                             if (!tileMap.has(coordsKey(nQ, nR)) || pieceMap.has(coordsKey(nQ, nR))) break;
-                            lastValid = { q: nQ, r: nR }; 
-                            curQ = nQ; 
-                            curR = nR;
+                            lastValid = { q: nQ, r: nR }; curQ = nQ; curR = nR;
                         }
                         return lastValid;
                     }).filter(Boolean);
-                    
-                    if (moves.some(m => m.q === tile.q && m.r === tile.r)) {
-                        setIsAnimating(true);
-                        animatePieceMove(selectedId, piece.q, piece.r, tile.q, tile.r);
-                    }
-                } else if (phase === 'move_tile' && !pieces.some(p => p.q === tile.q && p.r === tile.r)) {
+                    if (moves.some(m => m.q === tile.q && m.r === tile.r)) { setIsAnimating(true); animatePieceMove(selectedId, piece.q, piece.r, tile.q, tile.r); }
+                } else if (phase === 'move_tile' && !pieceMap.has(coordsKey(tile.q, tile.r))) {
                     const temp = tiles.filter((_, i) => i !== index);
                     const q = [temp[0]], vis = new Set([coordsKey(temp[0].q, temp[0].r)]);
                     while(q.length > 0) {
                         const cur = q.shift();
                         DIRECTIONS.forEach(d => {
                             const k = coordsKey(cur.q+d.q, cur.r+d.r);
-                            if(temp.some(t => coordsKey(t.q, t.r) === k) && !vis.has(k)) { 
-                                vis.add(k); 
-                                q.push({q:cur.q+d.q, r:cur.r+d.r}); 
-                            }
+                            if(temp.some(t => coordsKey(t.q, t.r) === k) && !vis.has(k)) { vis.add(k); q.push({q:cur.q+d.q, r:cur.r+d.r}); }
                         });
                     }
-                    if (vis.size === temp.length) {
-                        setSelectedId(index);
-                    } else {
-                        alert("盤面が分断されるため移動できません!");
-                    }
+                    if (vis.size === temp.length) setSelectedId(index);
+                    else alert("盤面を分断できません");
                 }
             };
 
-            const getValidTilePlacements = (idx) => {
-                const cands = new Map();
-                const rem = tiles.filter((_, i) => i !== idx);
-                const origK = coordsKey(tiles[idx].q, tiles[idx].r);
-                
-                rem.forEach(t => DIRECTIONS.forEach(d => {
-                    const nQ = t.q+d.q, nR = t.r+d.r, k = coordsKey(nQ, nR);
-                    if (rem.some(rt => rt.q===nQ && rt.r===nR) || k===origK) return;
-                    const data = cands.get(k) || { q:nQ, r:nR, neighbors:0 };
-                    data.neighbors++; 
-                    cands.set(k, data);
-                }));
-                
-                return Array.from(cands.values()).filter(c => c.neighbors >= 2);
-            };
-
-            let validDests = [];
-            if (phase === 'move_token' && typeof selectedId === 'string' && !isAnimating) {
-                const piece = pieces.find(p => p.id === selectedId);
-                DIRECTIONS.forEach(dir => {
-                    let curQ = piece.q, curR = piece.r, lastValid = null;
-                    while (true) {
-                        const nQ = curQ + dir.q, nR = curR + dir.r;
-                        if (!tileMap.has(coordsKey(nQ, nR)) || pieceMap.has(coordsKey(nQ, nR))) break;
-                        lastValid = { q: nQ, r: nR }; 
-                        curQ = nQ; 
-                        curR = nR;
-                    }
-                    if (lastValid) validDests.push(lastValid);
-                });
-            } else if (phase === 'move_tile' && typeof selectedId === 'number') {
-                validDests = getValidTilePlacements(selectedId);
-            }
+            const validDests = useMemo(() => {
+                if (winner || isAnimating) return [];
+                if (phase === 'move_token' && typeof selectedId === 'string') {
+                    const piece = pieces.find(p => p.id === selectedId);
+                    return DIRECTIONS.map(dir => {
+                        let curQ = piece.q, curR = piece.r, lastValid = null;
+                        while (true) {
+                            const nQ = curQ + dir.q, nR = curR + dir.r;
+                            if (!tileMap.has(coordsKey(nQ, nR)) || pieceMap.has(coordsKey(nQ, nR))) break;
+                            lastValid = { q: nQ, r: nR }; curQ = nQ; curR = nR;
+                        }
+                        return lastValid;
+                    }).filter(Boolean);
+                }
+                if (phase === 'move_tile' && typeof selectedId === 'number') {
+                    const cands = new Map(), rem = tiles.filter((_, i) => i !== selectedId);
+                    rem.forEach(t => DIRECTIONS.forEach(d => {
+                        const nQ = t.q+d.q, nR = t.r+d.r, k = coordsKey(nQ, nR);
+                        if (rem.some(rt => rt.q===nQ && rt.r===nR) || coordsKey(tiles[selectedId].q, tiles[selectedId].r) === k) return;
+                        const data = cands.get(k) || { q:nQ, r:nR, c:0 };
+                        data.c++; cands.set(k, data);
+                    }));
+                    return Array.from(cands.values()).filter(c => c.c >= 2);
+                }
+                return [];
+            }, [selectedId, phase, tiles, pieces, tileMap, pieceMap, winner, isAnimating]);
 
             return (
-                <div className={`flex flex-col flex-1 transition-colors duration-1000 ${winner === 'red' ? 'bg-rose-50' : winner === 'blue' ? 'bg-indigo-50' : 'bg-slate-50'}`}>
+                <div className={`game-container ${winner === 'red' ? 'bg-rose' : winner === 'blue' ? 'bg-indigo' : 'bg-slate'}`}>
                     {winner && <Confetti winner={winner} />}
+                    <header className="header"><h1 className="game-title">Nonaga</h1></header>
                     
-                    <header className="pt-4 flex flex-col items-center flex-shrink-0">
-                        <h1 className="game-title text-2xl font-black text-slate-800 italic uppercase">Nonaga</h1>
-                        <div className="w-8 h-0.5 bg-slate-800 mt-0.5 rounded-full opacity-10"></div>
-                    </header>
-
-                    <div className="mt-2 flex flex-col items-center px-4 w-full flex-shrink-0">
+                    <div className="status-container">
                         {winner ? (
-                            <div className="flex flex-col items-center z-50" style={{animation: 'slideInUp 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49) forwards'}}>
-                                <div className={`px-8 py-3 rounded-full shadow-2xl border-4 border-white ${winner === 'red' ? 'bg-rose-500' : 'bg-indigo-500'} text-white`}>
-                                    <span className="text-xl font-black">{PLAYERS[winner.toUpperCase()].name}の勝ち!</span>
-                                </div>
-                                <button 
-                                    onClick={resetGame} 
-                                    className="mt-4 px-6 py-2 bg-slate-800 text-white rounded-full text-xs font-bold tracking-widest shadow-lg active:scale-95 transition-transform"
-                                >
-                                    もう一度あそぶ
-                                </button>
+                            <div className="victory-container">
+                                <div className={`victory-badge ${winner}`}><span style={{fontSize:20, fontWeight:900}}>{winner === 'red' ? '赤' : '青'}の勝ち!</span></div>
+                                <button onClick={resetGame} className="reset-button">もう一度あそぶ</button>
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center">
-                                <div className="bg-white/95 backdrop-blur px-5 py-1.5 rounded-full shadow-soft border border-slate-100 flex items-center gap-3">
-                                    <div className={`flex items-center gap-2 transition-all ${turn === 'red' ? 'opacity-100 font-bold' : 'opacity-30'}`}>
-                                        <div className="w-3 h-3 rounded-full bg-rose-500" />赤
-                                    </div>
-                                    <div className="h-3 w-px bg-slate-200" />
-                                    <div className={`flex items-center gap-2 transition-all ${turn === 'blue' ? 'opacity-100 font-bold' : 'opacity-30'}`}>
-                                        <div className="w-3 h-3 rounded-full bg-indigo-500" />青
-                                    </div>
+                            <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                                <div className="turn-indicator">
+                                    <div className={`player-indicator ${turn === 'red' ? 'active' : ''}`}><div className="player-dot red" />赤</div>
+                                    <div style={{width:1, height:12, background:'#e2e8f0'}} />
+                                    <div className={`player-indicator ${turn === 'blue' ? 'active' : ''}`}><div className="player-dot blue" />青</div>
                                 </div>
-                                <div className="mt-1.5 text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-                                    {phase === 'move_token' ? "1. コマを滑らせる" : "2. タイルを移動する"}
+                                <div style={{fontSize:10, fontWeight:800, color:'#94a3b8', marginTop:8, textTransform:'uppercase'}}>
+                                    {phase === 'move_token' ? "1. コマを滑らせる" : "2. タイルを動かす"}
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <div className={`flex-1 flex items-center justify-center px-2 pb-2 ${winner ? 'scale-105' : ''}`} style={{touchAction: 'none'}}>
-                        <svg 
-                            viewBox={`${viewBounds.x} ${viewBounds.y} ${viewBounds.w} ${viewBounds.h}`} 
-                            className="w-full h-auto max-h-[65vh] select-none"
-                            style={{
-                                filter: 'drop-shadow(0 15px 20px rgba(0,0,0,0.12))',
-                                overflow: 'visible'
-                            }}
-                        >
-                            <defs>
-                                <filter id="piece-shadow">
-                                    <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
-                                    <feOffset dx="0" dy="2" result="offsetblur"/>
-                                    <feComponentTransfer>
-                                        <feFuncA type="linear" slope="0.3"/>
-                                    </feComponentTransfer>
-                                    <feMerge>
-                                        <feMergeNode/>
-                                        <feMergeNode in="SourceGraphic"/>
-                                    </feMerge>
-                                </filter>
-                            </defs>
-                            
+                    <div className="board-container">
+                        <svg viewBox={`${viewBounds.x} ${viewBounds.y} ${viewBounds.w} ${viewBounds.h}`} className="board-svg">
                             <g>
                                 {tiles.map((tile, i) => {
                                     const { x, y } = hexToPixel(tile.q, tile.r);
                                     const key = coordsKey(tile.q, tile.r);
+                                    const isV = victoryLine.includes(key);
                                     const isSelected = phase === 'move_tile' && selectedId === i;
-                                    const isDest = phase === 'move_token' && validDests.some(d => d.q === tile.q && d.r === tile.r);
-                                    const isVictoryTile = victoryLine.includes(key);
-                                    const winnerConfig = winner ? PLAYERS[winner.toUpperCase()] : null;
-                                    
+                                    const isDestHint = phase === 'move_token' && validDests.some(d => d.q === tile.q && d.r === tile.r);
                                     return (
-                                        <polygon 
-                                            key={`tile-${i}`} 
-                                            points="-34,-19 0,-38 34,-19 34,19 0,38 -34,19" 
-                                            transform={`translate(${x}, ${y})`}
-                                            className={`transition-all duration-300 ${winner || isAnimating ? 'pointer-events-none' : 'cursor-pointer'} 
-                                                ${isVictoryTile ? `${winnerConfig.light} ${winnerConfig.border} stroke-[4px]` : 
-                                                  isSelected ? 'fill-rose-100 stroke-rose-500 stroke-[3px]' : 
-                                                  isDest ? 'fill-emerald-50 stroke-emerald-400 stroke-2' : 
-                                                  'fill-white stroke-slate-200'}
-                                                ${winner && !isVictoryTile ? 'opacity-20' : 'opacity-100'}`}
-                                            onClick={() => handleTileClick(tile, i)} 
-                                        />
+                                        <polygon key={`tile-${i}`} points="-34,-19 0,-38 34,-19 34,19 0,38 -34,19" transform={`translate(${x}, ${y})`}
+                                            className={`tile ${isV ? `victory-tile ${winner}` : isSelected ? 'selected-origin' : isDestHint ? 'destination-hint' : ''} ${winner && !isV ? 'faded' : ''}`}
+                                            onClick={() => handleTileClick(tile, i)} />
                                     );
                                 })}
-                                
                                 {phase === 'move_tile' && typeof selectedId === 'number' && validDests.map((dest, i) => {
                                     const { x, y } = hexToPixel(dest.q, dest.r);
                                     return (
-                                        <polygon 
-                                            key={`guide-${i}`} 
-                                            points="-30,-16 0,-34 30,-16 30,16 0,34 -30,16" 
-                                            transform={`translate(${x}, ${y})`}
-                                            className="fill-sky-50 stroke-sky-500 stroke-2 opacity-70 cursor-pointer"
-                                            strokeDasharray="4"
+                                        <polygon key={`guide-${i}`} points="-30,-16 0,-34 30,-16 30,16 0,34 -30,16" transform={`translate(${x}, ${y})`}
+                                            style={{fill:'#f0fdf4', stroke:'#34d399', strokeWidth:2, strokeDasharray:4, opacity:0.8, cursor:'pointer'}}
                                             onClick={() => {
-                                                const newTiles = [...tiles]; 
-                                                newTiles[selectedId] = { q: dest.q, r: dest.r };
-                                                setTiles(newTiles); 
-                                                setPhase('move_token'); 
-                                                setTurn(turn === 'red' ? 'blue' : 'red'); 
-                                                setSelectedId(null);
-                                            }} 
-                                        >
-                                            <animate 
-                                                attributeName="opacity" 
-                                                values="0.5;0.9;0.5" 
-                                                dur="1.5s" 
-                                                repeatCount="indefinite" 
-                                            />
-                                        </polygon>
+                                                const nt = [...tiles]; nt[selectedId] = { q: dest.q, r: dest.r };
+                                                setTiles(nt); setPhase('move_token'); setTurn(turn === 'red' ? 'blue' : 'red'); setSelectedId(null);
+                                            }} />
                                     );
                                 })}
-                                
                                 {pieces.map((p) => {
-                                    const key = coordsKey(p.q, p.r);
-                                    const config = PLAYERS[p.player.toUpperCase()];
-                                    const isVictoryPiece = victoryLine.includes(key);
-                                    
-                                    let pos;
-                                    if (animatingPiece && animatingPiece.id === p.id) {
-                                        pos = { x: animatingPiece.x, y: animatingPiece.y };
-                                    } else {
-                                        pos = hexToPixel(p.q, p.r);
-                                    }
-                                    
+                                    const isV = victoryLine.includes(coordsKey(p.q, p.r));
+                                    const pos = (animatingPiece && animatingPiece.id === p.id) ? { x: animatingPiece.x, y: animatingPiece.y } : hexToPixel(p.q, p.r);
                                     return (
-                                        <g 
-                                            key={p.id} 
-                                            transform={`translate(${pos.x}, ${pos.y})`}
-                                            style={{
-                                                transition: animatingPiece?.id === p.id ? 'none' : 'transform 0.15s ease-out',
-                                                willChange: 'transform'
-                                            }}
-                                            onClick={() => handlePieceClick(p)}
-                                        >
-                                            <circle r="25" className="fill-transparent cursor-pointer" />
-                                            <circle 
-                                                r="20" 
-                                                className={`${config.color} ${selectedId === p.id ? 'stroke-white stroke-[4px]' : 'stroke-black/10 stroke-1'} ${winner && !isVictoryPiece ? 'opacity-20' : 'opacity-100'}`}
-                                                filter="url(#piece-shadow)"
-                                                style={{
-                                                    animation: isVictoryPiece ? 'piece-pulse 1.2s ease-in-out infinite' : 'none'
-                                                }}
-                                            />
-                                            <circle 
-                                                r="14" 
-                                                className={`fill-black/5 pointer-events-none ${winner && !isVictoryPiece ? 'opacity-0' : 'opacity-100'}`} 
-                                            />
+                                        <g key={p.id} transform={`translate(${pos.x}, ${pos.y})`} style={{cursor: 'pointer'}} onClick={() => handlePieceClick(p)}>
+                                            <circle r="30" fill="transparent" />
+                                            <circle r="20" className={`piece-main ${p.player} ${selectedId === p.id ? 'selected' : ''} ${isV ? 'victory-piece' : ''}`} style={{opacity: (winner && !isV) ? 0.2 : 1}} />
+                                            <circle r="14" fill="rgba(0,0,0,0.05)" style={{pointerEvents:'none', opacity: (winner && !isV) ? 0 : 1}} />
                                         </g>
                                     );
                                 })}
@@ -461,24 +259,20 @@
                         </svg>
                     </div>
 
-                    <div className="px-4 pb-6 w-full max-w-xl mx-auto flex-shrink-0">
-                        <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-slate-100 w-full">
-                            <div className="space-y-3">
-                                <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-3 flex items-start gap-3">
-                                    <span className="text-sm">🏆</span>
-                                    <p className="text-amber-900 text-xs leading-relaxed">
-                                        自分のコマを <span className="font-black underline decoration-amber-300">3つ連結</span> させれば勝ち!
-                                    </p>
+                    <div className="rules-container">
+                        <div className="rules-card">
+                            <div className="goal-box">
+                                <span style={{fontSize:14}}>🏆</span>
+                                <p>自分のコマを <strong>3つ一列に連結</strong> させれば勝ち!</p>
+                            </div>
+                            <div className="steps-grid">
+                                <div className="step-item">
+                                    <span className="step-number">1</span>
+                                    <p>端までコマを滑らせる</p>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3 text-[10px]">
-                                    <div className="flex gap-2 items-center text-slate-500">
-                                        <span className="w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold">1</span>
-                                        <p>自分のコマを端まで滑らせる</p>
-                                    </div>
-                                    <div className="flex gap-2 items-center text-slate-500">
-                                        <span className="w-5 h-5 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold">2</span>
-                                        <p>空きタイルを移動する</p>
-                                    </div>
+                                <div className="step-item">
+                                    <span className="step-number">2</span>
+                                    <p>空きタイルを移動する</p>
                                 </div>
                             </div>
                         </div>
