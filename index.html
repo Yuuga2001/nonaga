@@ -136,9 +136,10 @@
             const [victoryLine, setVictoryLine] = useState([]);
             const [isAnimating, setIsAnimating] = useState(false);
             const [animatingPiece, setAnimatingPiece] = useState(null);
+            const [animatingTile, setAnimatingTile] = useState(null);
             const animationFrameRef = useRef(null);
 
-            const resetGame = () => { setTiles(INITIAL_TILES); setPieces(INITIAL_PIECES); setTurn('red'); setPhase('move_token'); setSelectedId(null); setWinner(null); setVictoryLine([]); setIsAnimating(false); setAnimatingPiece(null); };
+            const resetGame = () => { setTiles(INITIAL_TILES); setPieces(INITIAL_PIECES); setTurn('red'); setPhase('move_token'); setSelectedId(null); setWinner(null); setVictoryLine([]); setIsAnimating(false); setAnimatingPiece(null); setAnimatingTile(null); };
             const tileMap = useMemo(() => new Set(tiles.map(t => coordsKey(t.q, t.r))), [tiles]);
             const pieceMap = useMemo(() => { const map = new Map(); pieces.forEach(p => map.set(coordsKey(p.q, p.r), p)); return map; }, [pieces]);
             const hexToPixel = (q, r) => ({ x: HEX_SIZE * (3/2 * q), y: HEX_SIZE * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r) });
@@ -179,6 +180,25 @@
                         const winCoords = getVictoryCoords(nextPieces, turn);
                         if (winCoords) { setWinner(turn); setVictoryLine(winCoords); setPhase('ended'); }
                         else { setPhase('move_tile'); setSelectedId(null); }
+                    }
+                };
+                animationFrameRef.current = requestAnimationFrame(animate);
+            };
+
+            const animateTileMove = (tileIndex, fromQ, fromR, toQ, toR) => {
+                const startTime = performance.now();
+                const fromPos = hexToPixel(fromQ, fromR);
+                const toPos = hexToPixel(toQ, toR);
+                const animate = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / 800, 1);
+                    const eased = 1 - Math.pow(1 - progress, 3);
+                    setAnimatingTile({ index: tileIndex, x: fromPos.x + (toPos.x - fromPos.x) * eased, y: fromPos.y + (toPos.y - fromPos.y) * eased });
+                    if (progress < 1) animationFrameRef.current = requestAnimationFrame(animate);
+                    else {
+                        setAnimatingTile(null); setIsAnimating(false);
+                        const nt = [...tiles]; nt[tileIndex] = { q: toQ, r: toR };
+                        setTiles(nt); setPhase('move_token'); setTurn(turn === 'red' ? 'blue' : 'red'); setSelectedId(null);
                     }
                 };
                 animationFrameRef.current = requestAnimationFrame(animate);
@@ -270,14 +290,14 @@
                         <svg viewBox={`${viewBounds.x} ${viewBounds.y} ${viewBounds.w} ${viewBounds.h}`} className="board-svg">
                             <g>
                                 {tiles.map((tile, i) => {
-                                    const { x, y } = hexToPixel(tile.q, tile.r);
+                                    const pos = (animatingTile && animatingTile.index === i) ? { x: animatingTile.x, y: animatingTile.y } : hexToPixel(tile.q, tile.r);
                                     const key = coordsKey(tile.q, tile.r);
                                     const isV = victoryLine.includes(key);
                                     const isSelected = phase === 'move_tile' && selectedId === i;
                                     const isDestHint = phase === 'move_token' && validDests.some(d => d.q === tile.q && d.r === tile.r);
                                     const isSelectableEmpty = !winner && phase === 'move_tile' && !pieceMap.has(key) && !isAnimating;
                                     return (
-                                        <polygon key={`tile-${i}`} points="-34,-19 0,-38 34,-19 34,19 0,38 -34,19" transform={`translate(${x}, ${y})`}
+                                        <polygon key={`tile-${i}`} points="-34,-19 0,-38 34,-19 34,19 0,38 -34,19" transform={`translate(${pos.x}, ${pos.y})`}
                                             className={`tile ${isV ? `victory-tile ${winner}` : isSelected ? 'selected-origin' : isDestHint ? 'destination-hint' : isSelectableEmpty ? 'selectable-empty' : ''} ${winner && !isV ? 'faded' : ''}`}
                                             onClick={() => handleTileClick(tile, i)} />
                                     );
@@ -288,8 +308,8 @@
                                         <polygon key={`guide-${i}`} points="-30,-16 0,-34 30,-16 30,16 0,34 -30,16" transform={`translate(${x}, ${y})`}
                                             style={{fill:'#f0fdf4', stroke:'#34d399', strokeWidth:2, strokeDasharray:4, opacity:0.8, cursor:'pointer'}}
                                             onClick={() => {
-                                                const nt = [...tiles]; nt[selectedId] = { q: dest.q, r: dest.r };
-                                                setTiles(nt); setPhase('move_token'); setTurn(turn === 'red' ? 'blue' : 'red'); setSelectedId(null);
+                                                setIsAnimating(true);
+                                                animateTileMove(selectedId, tiles[selectedId].q, tiles[selectedId].r, dest.q, dest.r);
                                             }} />
                                     );
                                 })}
