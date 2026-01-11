@@ -8,3 +8,5 @@ frontend:
     baseDirectory: .
     files:
       - index.html
+      - favicon.png
+      - ogp.png
