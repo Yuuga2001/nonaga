@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nonaga Web</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; background-color: #f0f2f5; }
+        .hex-grid { transition: transform 0.3s ease; }
+        .tile { transition: all 0.3s ease; cursor: pointer; }
+        .tile:hover { filter: brightness(1.1); }
+        .piece { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
+        .shadow-soft { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- 定数とヘルパー関数 ---
+        const HEX_SIZE = 34;
+        const GRID_WIDTH = HEX_SIZE * 2;
+        const GRID_HEIGHT = HEX_SIZE * Math.sqrt(3);
+        
+        // 六角形の隣接方向 (Axial coordinates: q, r)
+        const DIRECTIONS = [
+            {q: 1, r: 0}, {q: 1, r: -1}, {q: 0, r: -1},
+            {q: -1, r: 0}, {q: -1, r: 1}, {q: 0, r: 1}
+        ];
+
+        // 座標文字列生成
+        const coordsKey = (q, r) => `${q},${r}`;
+
+        // 初期配置データ
+        const INITIAL_TILES = [
+            // Center
+            {q:0, r:0},
+            // Ring 1
+            {q:1, r:0}, {q:1, r:-1}, {q:0, r:-1}, {q:-1, r:0}, {q:-1, r:1}, {q:0, r:1},
+            // Ring 2
+            {q:2, r:0}, {q:2, r:-1}, {q:2, r:-2}, {q:1, r:-2}, {q:0, r:-2}, 
+            {q:-1, r:-1}, {q:-2, r:0}, {q:-2, r:1}, {q:-2, r:2}, {q:-1, r:2}, {q:0, r:2}, {q:1, r:1}
+        ];
+
+        // プレイヤー定義
+        const PLAYERS = {
+            RED: { id: 'red', color: 'fill-rose-500', name: 'Red' },
+            BLUE: { id: 'blue', color: 'fill-indigo-500', name: 'Blue' }
+        };
+
+        const INITIAL_PIECES = [
+            { id: 'r1', player: 'red', q: -1, r: -1 }, { id: 'r2', player: 'red', q: 1, r: -2 }, { id: 'r3', player: 'red', q: 2, r: 0 },
+            { id: 'b1', player: 'blue', q: -2, r: 0 }, { id: 'b2', player: 'blue', q: -1, r: 2 }, { id: 'b3', player: 'blue', q: 1, r: 1 }
+        ];
+
+        // --- メインコンポーネント ---
+        const NonagaGame = () => {
+            const [tiles, setTiles] = useState(INITIAL_TILES); // {q, r}[]
+            const [pieces, setPieces] = useState(INITIAL_PIECES); // {id, player, q, r}[]
+            const [turn, setTurn] = useState('red'); // 'red' | 'blue'
+            const [phase, setPhase] = useState('move_token'); // 'move_token' | 'move_tile'
+            const [selectedId, setSelectedId] = useState(null); // pieceId or tileIndex
+            const [winner, setWinner] = useState(null);
+
+            // 盤面のルックアップマップ作成
+            const tileMap = useMemo(() => {
+                const map = new Set();
+                tiles.forEach(t => map.add(coordsKey(t.q, t.r)));
+                return map;
+            }, [tiles]);
+
+            const pieceMap = useMemo(() => {
+                const map = new Map();
+                pieces.forEach(p => map.set(coordsKey(p.q, p.r), p));
+                return map;
+            }, [pieces]);
+
+            // --- ロジック関数 ---
+
+            // 六角形 -> ピクセル変換
+            const hexToPixel = (q, r) => {
+                const x = HEX_SIZE * (3/2 * q);
+                const y = HEX_SIZE * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r);
+                return { x, y };
+            };
+
+            // コマの移動先候補を計算（スライド移動）
+            const getValidMovesForPiece = (piece) => {
+                const moves = [];
+                DIRECTIONS.forEach(dir => {
+                    let currentQ = piece.q;
+                    let currentR = piece.r;
+                    let lastValidQ = currentQ;
+                    let lastValidR = currentR;
+
+                    // 盤外に出るか、他の駒にぶつかるまで進む
+                    while (true) {
+                        const nextQ = currentQ + dir.q;
+                        const nextR = currentR + dir.r;
+                        const key = coordsKey(nextQ, nextR);
+
+                        // タイルがない、または駒がある場合はストップ
+                        if (!tileMap.has(key) || pieceMap.has(key)) {
+                            break;
+                        }
+                        
+                        lastValidQ = nextQ;
+                        lastValidR = nextR;
+                        currentQ = nextQ;
+                        currentR = nextR;
+                    }
+
+                    // 移動していれば候補に追加
+                    if (lastValidQ !== piece.q || lastValidR !== piece.r) {
+                        moves.push({ q: lastValidQ, r: lastValidR });
+                    }
+                });
+                return moves;
+            };
+
+            // タイルの接続性チェック (BFS)
+            const checkConnectivity = (tempTiles) => {
+                if (tempTiles.length === 0) return true;
+                const tileSet = new Set(tempTiles.map(t => coordsKey(t.q, t.r)));
+                const start = tempTiles[0];
+                const queue = [start];
+                const visited = new Set([coordsKey(start.q, start.r)]);
+
+                while (queue.length > 0) {
+                    const current = queue.shift();
+                    DIRECTIONS.forEach(dir => {
+                        const nQ = current.q + dir.q;
+                        const nR = current.r + dir.r;
+                        const key = coordsKey(nQ, nR);
+                        if (tileSet.has(key) && !visited.has(key)) {
+                            visited.add(key);
+                            queue.push({q: nQ, r: nR});
+                        }
+                    });
+                }
+                return visited.size === tempTiles.length;
+            };
+
+            // タイル移動候補（空きスペースかつ、2枚以上のタイルに接する）
+            const getValidTilePlacements = (movingTileIndex) => {
+                const candidates = new Map(); // key -> {q,r}
+                const remainingTiles = tiles.filter((_, i) => i !== movingTileIndex);
+                
+                // 残りのタイルの周囲を探索
+                remainingTiles.forEach(t => {
+                    DIRECTIONS.forEach(dir => {
+                        const nQ = t.q + dir.q;
+                        const nR = t.r + dir.r;
+                        const key = coordsKey(nQ, nR);
+                        
+                        // 既にタイルがある場所は除外
+                        if (remainingTiles.some(rt => rt.q === nQ && rt.r === nR)) return;
+
+                        // 候補に追加またはカウントアップ
+                        if (!candidates.has(key)) {
+                            candidates.set(key, { q: nQ, r: nR, neighbors: 1 });
+                        } else {
+                            candidates.get(key).neighbors++;
+                        }
+                    });
+                });
+
+                // 2つ以上に接している場所のみ返す
+                return Array.from(candidates.values()).filter(c => c.neighbors >= 2);
+            };
+
+            // 勝利判定 (修正: 形状を問わず3つが連結していれば勝ち)
+            const checkWin = (currentPieces) => {
+                const p = currentPieces.filter(cp => cp.player === turn);
+                if (p.length !== 3) return false;
+
+                // 2つのコマが隣接しているか
+                const isAdj = (a, b) => {
+                    return DIRECTIONS.some(d => a.q + d.q === b.q && a.r + d.r === b.r);
+                };
+
+                // 隣接ペアの数を数える
+                // 3つのコマのペアは (0,1), (1,2), (2,0) の3通り
+                let connections = 0;
+                if (isAdj(p[0], p[1])) connections++;
+                if (isAdj(p[1], p[2])) connections++;
+                if (isAdj(p[2], p[0])) connections++;
+
+                // ペアが2つ以上あれば、3つ全てがつながっていることになる
+                // - 直線/V字の場合: ペアは2つ (例: A-B, B-C)
+                // - 三角形の場合: ペアは3つ (例: A-B, B-C, C-A)
+                return connections >= 2;
+            };
+
+            // --- アクションハンドラ ---
+
+            const handlePieceClick = (piece) => {
+                if (winner || phase !== 'move_token' || piece.player !== turn) return;
+                if (selectedId === piece.id) {
+                    setSelectedId(null);
+                } else {
+                    setSelectedId(piece.id);
+                }
+            };
+
+            const handleTileClick = (tile, index) => {
+                if (winner) return;
+
+                // Move Token Phase: 移動先の決定
+                if (phase === 'move_token' && selectedId && typeof selectedId === 'string') {
+                    const piece = pieces.find(p => p.id === selectedId);
+                    const validMoves = getValidMovesForPiece(piece);
+                    const isMoveValid = validMoves.some(m => m.q === tile.q && m.r === tile.r);
+
+                    if (isMoveValid) {
+                        // Move Piece
+                        const newPieces = pieces.map(p => 
+                            p.id === selectedId ? { ...p, q: tile.q, r: tile.r } : p
+                        );
+                        setPieces(newPieces);
+                        
+                        // Check Win immediately after move
+                        if (checkWin(newPieces)) {
+                            setWinner(turn);
+                            setPhase('ended');
+                        } else {
+                            setPhase('move_tile');
+                            setSelectedId(null);
+                        }
+                    }
+                    return;
+                }
+
+                // Move Tile Phase: タイルの選択
+                if (phase === 'move_tile') {
+                    // コマが乗っているタイルは動かせない
+                    const hasPiece = pieces.some(p => p.q === tile.q && p.r === tile.r);
+                    if (hasPiece) return;
+
+                    // タイルを抜いても分断されないかチェック
+                    const remainingTiles = tiles.filter((_, i) => i !== index);
+                    if (!checkConnectivity(remainingTiles)) {
+                        alert("盤面が分断されるため、このタイルは動かせません。");
+                        return;
+                    }
+
+                    setSelectedId(index); // タイルインデックスを選択
+                }
+            };
+
+            const handleGhostTileClick = (q, r) => {
+                if (winner || phase !== 'move_tile' || typeof selectedId !== 'number') return;
+
+                // Move Selected Tile to new position
+                const newTiles = [...tiles];
+                newTiles[selectedId] = { q, r };
+                
+                setTiles(newTiles);
+                setPhase('move_token');
+                setTurn(turn === 'red' ? 'blue' : 'red');
+                setSelectedId(null);
+            };
+
+            // --- 描画準備 ---
+            
+            // ハイライト情報の計算
+            let validDestinations = [];
+            if (phase === 'move_token' && selectedId && typeof selectedId === 'string') {
+                const piece = pieces.find(p => p.id === selectedId);
+                if (piece) validDestinations = getValidMovesForPiece(piece);
+            }
+            if (phase === 'move_tile' && typeof selectedId === 'number') {
+                validDestinations = getValidTilePlacements(selectedId);
+            }
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen p-4 font-sans text-slate-700">
+                    
+                    {/* Header / Status */}
+                    <div className="mb-6 text-center z-10">
+                        <h1 className="text-4xl font-bold mb-2 tracking-tight">NONAGA</h1>
+                        <div className="flex items-center gap-4 justify-center bg-white px-6 py-3 rounded-full shadow-soft">
+                            {winner ? (
+                                <span className={`text-xl font-bold ${winner === 'red' ? 'text-rose-500' : 'text-indigo-500'}`}>
+                                    WINNER: {winner.toUpperCase()}!
+                                </span>
+                            ) : (
+                                <>
+                                    <div className={`flex items-center gap-2 ${turn === 'red' ? 'opacity-100 font-bold' : 'opacity-50'}`}>
+                                        <div className="w-4 h-4 rounded-full bg-rose-500"></div> RED
+                                    </div>
+                                    <div className="text-slate-300">|</div>
+                                    <div className={`flex items-center gap-2 ${turn === 'blue' ? 'opacity-100 font-bold' : 'opacity-50'}`}>
+                                        <div className="w-4 h-4 rounded-full bg-indigo-500"></div> BLUE
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                        <div className="mt-2 text-sm text-slate-500 font-medium">
+                            {!winner && (phase === 'move_token' ? "1. コマを滑らせる" : "2. 空きタイルを移動")}
+                        </div>
+                    </div>
+
+                    {/* Game Board */}
+                    <div className="relative w-full max-w-lg aspect-square flex items-center justify-center">
+                        <div className="absolute inset-0 bg-slate-200 rounded-3xl opacity-50 transform rotate-3"></div>
+                        <div className="relative bg-white w-full h-full rounded-3xl shadow-xl overflow-hidden flex items-center justify-center border border-slate-100">
+                            
+                            {/* SVG Layer for Board */}
+                            <svg 
+                                viewBox="-300 -300 600 600" 
+                                className="w-full h-full touch-none select-none"
+                            >
+                                <defs>
+                                    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                                        <feDropShadow dx="2" dy="4" stdDeviation="3" floodColor="#cbd5e1" floodOpacity="0.5"/>
+                                    </filter>
+                                </defs>
+
+                                <g transform="translate(0, 20)"> {/* Slight offset for centering */}
+                                    
+                                    {/* Tiles */}
+                                    {tiles.map((tile, i) => {
+                                        const { x, y } = hexToPixel(tile.q, tile.r);
+                                        const isSelected = phase === 'move_tile' && selectedId === i;
+                                        const isDest = phase === 'move_token' && validDestinations.some(d => d.q === tile.q && d.r === tile.r);
+                                        
+                                        // タイル移動フェーズで、動かせないタイル（コマがある）の判定
+                                        const hasPiece = pieces.some(p => p.q === tile.q && p.r === tile.r);
+                                        const isMovableTile = phase === 'move_tile' && !hasPiece && selectedId === null;
+
+                                        return (
+                                            <g key={i} 
+                                               onClick={() => handleTileClick(tile, i)}
+                                               className="cursor-pointer"
+                                            >
+                                                <polygon 
+                                                    points="-32,-18 0,-36 32,-18 32,18 0,36 -32,18"
+                                                    transform={`translate(${x}, ${y})`}
+                                                    className={`
+                                                        transition-all duration-300 
+                                                        ${isSelected ? 'fill-yellow-100 stroke-yellow-400 stroke-2' : 'fill-slate-100 stroke-slate-300 stroke-1'}
+                                                        ${isDest ? 'fill-green-100 stroke-green-400 stroke-2' : ''}
+                                                        ${isMovableTile ? 'hover:fill-slate-50' : ''}
+                                                    `}
+                                                    filter={isSelected ? "" : "url(#shadow)"}
+                                                />
+                                            </g>
+                                        );
+                                    })}
+
+                                    {/* Ghost Tiles for Placement */}
+                                    {phase === 'move_tile' && typeof selectedId === 'number' && validDestinations.map((dest, i) => {
+                                        const { x, y } = hexToPixel(dest.q, dest.r);
+                                        return (
+                                            <polygon 
+                                                key={`ghost-${i}`}
+                                                points="-28,-14 0,-32 28,-14 28,14 0,32 -28,14"
+                                                transform={`translate(${x}, ${y})`}
+                                                className="fill-none stroke-slate-400 stroke-2 opacity-50 stroke-dasharray-4 hover:fill-slate-200 cursor-pointer animate-pulse"
+                                                onClick={() => handleGhostTileClick(dest.q, dest.r)}
+                                            />
+                                        );
+                                    })}
+
+                                    {/* Pieces */}
+                                    {pieces.map((piece) => {
+                                        const { x, y } = hexToPixel(piece.q, piece.r);
+                                        const isSelected = selectedId === piece.id;
+                                        const isMyTurn = piece.player === turn;
+                                        const playerConfig = PLAYERS[piece.player.toUpperCase()];
+
+                                        return (
+                                            <circle 
+                                                key={piece.id}
+                                                cx={x} cy={y} r="20"
+                                                className={`
+                                                    transition-all duration-500 ease-out
+                                                    ${playerConfig.color}
+                                                    ${isSelected ? 'stroke-white stroke-4 r-22' : 'stroke-none'}
+                                                    ${isMyTurn && phase === 'move_token' ? 'cursor-pointer hover:opacity-90' : ''}
+                                                    ${winner ? 'opacity-50' : ''}
+                                                `}
+                                                style={{ 
+                                                    filter: 'drop-shadow(0px 4px 4px rgba(0,0,0,0.2))',
+                                                    transformBox: 'fill-box',
+                                                    transformOrigin: 'center'
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handlePieceClick(piece);
+                                                }}
+                                            />
+                                        );
+                                    })}
+
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+
+                    {/* Footer / Reset */}
+                    <div className="mt-8 text-center space-y-4">
+                        <button 
+                            onClick={() => window.location.reload()}
+                            className="px-6 py-2 bg-white border border-slate-200 text-slate-600 rounded-full text-sm hover:bg-slate-50 shadow-sm transition-colors"
+                        >
+                            ゲームをリセット
+                        </button>
+                        <p className="text-xs text-slate-400 mx-auto leading-relaxed">
+                            ルール: 自分のコマを3つ連結(直線・V字・三角形)させたら勝利。<br/>
+                            1. コマを選択して滑らせる (途中で止まれない)<br/>
+                            2. 任意のタイルを別の場所に移動する
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<NonagaGame />);
+    </script>
+</body>
+</html>
