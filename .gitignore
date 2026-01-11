@@ -1,0 +1,11 @@
+# OS files
+.DS_Store
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# Temporary files
+*.log
+*.tmp

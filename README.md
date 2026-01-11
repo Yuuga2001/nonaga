@@ -2,7 +2,7 @@
 
 六角形の盤面を操り、3つのコマを繋げて勝利を目指す2人対戦ゲーム
 
-[![Play Now](https://img.shields.io/badge/🎮-今すぐプレイ-blue?style=for-the-badge)](https://ymacbookpro.github.io/nonaga/)
+[![Play Now](https://img.shields.io/badge/🎮-今すぐプレイ-blue?style=for-the-badge)](https://main.d2sqhzibotcf4t.amplifyapp.com/)
 
 ---
 
@@ -65,13 +65,17 @@ NONAGAは、コマを動かすだけでなく、盤面のタイル自体を動�
 
 ## 🖥️ 遊び方
 
-### オンライン版
+### オンライン版（推奨）
 
 ブラウザで即プレイ可能（インストール不要）:
 
+🎮 **[今すぐプレイ](https://main.d2sqhzibotcf4t.amplifyapp.com/)**
+
+### ローカル環境で起動
+
 ```bash
-# ローカルで動かす場合
-python -m http.server 8000
+# 任意のHTTPサーバーで起動
+python3 -m http.server 8000
 # または
 npx serve .
 ```
@@ -88,22 +92,35 @@ npx serve .
 
 ## 🛠️ 技術仕様
 
-### アーキテクチャ
+### 実装方式
 
-**単一ファイルHTML実装**
+**単一HTMLファイルによるシンプル実装**
 
-```
-index.html
-├── React 18 (CDN)
-├── SVG レンダリング
-└── レスポンシブデザイン
-```
-
-- **フレームワーク**: React 18（production build via CDN）
+- **ファイル構成**: `index.html` 1ファイルのみ（22KB）
+- **依存関係**: CDN経由でReact 18を読み込み
+- **ビルド不要**: ブラウザで直接実行可能
 - **描画エンジン**: SVG（六角形ポリゴン）
 - **座標系**: 軸座標系（Axial Coordinates）`{q, r}`
-- **状態管理**: React hooks（useState, useMemo）
-- **アニメーション**: requestAnimationFrame（450ms cubic ease-out）
+- **状態管理**: React Hooks（useState, useMemo, useCallback）
+
+### 主要技術
+
+```html
+<!DOCTYPE html>
+<html>
+  <!-- React 18 (CDN) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react.dom.production.min.js"></script>
+
+  <!-- Babel Standalone (JSX変換) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- ゲームロジック（インライン） -->
+  <script type="text/babel">
+    // 全てのゲームロジックがここに
+  </script>
+</html>
+```
 
 ### 実装済み機能
 
@@ -118,49 +135,50 @@ index.html
 
 ### コアアルゴリズム
 
-#### 1. スライド移動（[index.html:187-195](index.html#L187-L195)）
+#### 1. スライド移動（index.html:187-195）
+
+コマが選択方向に障害物（他のコマまたは盤面端）まで滑る
 
 ```javascript
-// 選択方向に障害物まで滑る
-while (true) {
-  next = current + direction
-  if (!tileExists(next) || pieceExists(next)) break
-  current = next
+const slideInDirection = (q, r, dq, dr) => {
+  let cq = q, cr = r;
+  while (true) {
+    const nq = cq + dq, nr = cr + dr;
+    if (!tileMap.has(coordsKey(nq, nr))) break;
+    if (pieceMap.has(coordsKey(nq, nr))) break;
+    cq = nq; cr = nr;
+  }
+  return { q: cq, r: cr };
 }
 ```
 
-#### 2. 接続性チェック（[index.html:198-208](index.html#L198-L208)）
+#### 2. 接続性チェック（index.html:198-207）
+
+タイル移動後も盤面が繋がっているかBFSで検証
 
 ```javascript
-// タイル削除後も盤面が繋がっているか検証
-removeTile(selectedTile)
-visited = BFS(anyRemainingTile)
-isValid = (visited.size === remainingTiles.length)
+const isBoardConnected = (tiles, excludeIndex) => {
+  const temp = tiles.filter((_, i) => i !== excludeIndex);
+  if (temp.length === 0) return true;
+  const visited = new Set([coordsKey(temp[0].q, temp[0].r)]);
+  const queue = [temp[0]];
+  // BFS実装...
+  return visited.size === temp.length;
+}
 ```
 
-#### 3. 勝利判定（[index.html:152-158](index.html#L152-L158)）
+#### 3. 勝利判定（index.html:152-158）
+
+3つのコマのうち2組以上が隣接していればOK
 
 ```javascript
-// 3つのコマのうち2組以上が隣接していればOK
-isAdjacent(p1, p2) && isAdjacent(p2, p3) // 直線
-isAdjacent(p1, p2) && isAdjacent(p1, p3) // V字
-isAdjacent(p2, p3) && isAdjacent(p1, p3) // V字逆
-```
-
-### データ構造
-
-```javascript
-// 状態（React state）
-tiles: Array<{q: number, r: number}>           // 19タイルの座標
-pieces: Array<{id, player, q, r}>              // 6コマの情報
-turn: 'red' | 'blue'                           // 現在の手番
-phase: 'move_token' | 'move_tile'              // フェーズ
-selectedId: string | number | null             // 選択中のID
-
-// 派生状態（useMemo）
-tileMap: Set<string>                           // "q,r"形式のキーSet
-pieceMap: Map<string, Piece>                   // 座標→コマのMap
-validDests: Array<{q, r}>                      // 移動可能先
+const checkWin = (player) => {
+  const ps = pieces.filter(p => p.player === player);
+  const adj01 = areAdjacent(ps[0].q, ps[0].r, ps[1].q, ps[1].r);
+  const adj12 = areAdjacent(ps[1].q, ps[1].r, ps[2].q, ps[2].r);
+  const adj20 = areAdjacent(ps[2].q, ps[2].r, ps[0].q, ps[0].r);
+  return (adj01 && adj12) || (adj12 && adj20) || (adj20 && adj01);
+}
 ```
 
 ---
@@ -172,20 +190,76 @@ validDests: Array<{q, r}>                      // 移動可能先
 - 🌈 **色分けフィードバック**:
   - 赤/青の選択強調
   - 緑の移動可能先ハイライト
+  - 黄色の自分のターン表示
 - ✨ **アニメーション**:
-  - コマ移動のスムーズな補間
+  - コマ移動のスムーズな補間（cubic ease-out）
   - 勝利時の紙吹雪演出
 - 📱 **レスポンシブ**:
-  - 動的ビューポート対応（dvh）
-  - セーフエリア考慮（iOS）
+  - 動的ビューポート対応（100dvh）
+  - セーフエリア考慮（iOS notch対応）
+  - スマホでのスクロール対策
 
 ---
 
 ## 📝 今後の拡張案
 
-- [ ] 対戦履歴の保存
+- [ ] Undo/Redo機能
 - [ ] AI対戦モード（ミニマックス法）
 - [ ] オンライン対戦（WebSocket）
-- [ ] 手の巻き戻し機能（Undo）
+- [ ] テーマ切り替え（ダークモード）
 - [ ] タイマーモード
+- [ ] 棋譜記録・再生機能
 
+---
+
+## 📚 開発者向け情報
+
+### ファイル構造
+
+```
+nonaga/
+├── index.html       # ゲーム本体（全てのコードを含む）
+├── CLAUDE.md        # プロジェクト概要（Claude Code用）
+├── README.md        # このファイル
+└── amplify.yaml     # AWS Amplifyデプロイ設定
+```
+
+### デプロイ
+
+AWS Amplifyで自動デプロイ:
+
+```yaml
+# amplify.yaml
+version: 1
+frontend:
+  phases:
+    build:
+      commands:
+        - echo "Static HTML deployment - no build required"
+  artifacts:
+    baseDirectory: .
+    files:
+      - index.html
+```
+
+### カスタマイズ
+
+`index.html` を直接編集:
+
+- **スタイル**: `<style>` タグ内のCSS（10-99行目）
+- **ゲームロジック**: `<script type="text/babel">` 内のReactコード（103-325行目）
+- **初期配置**: `INITIAL_TILES` と `INITIAL_PIECES` 定数
+
+---
+
+## 🙏 クレジット
+
+- **ゲームデザイン**: オリジナル
+- **実装**: React 18 + SVG
+- **デプロイ**: AWS Amplify
+
+---
+
+## 📄 ライセンス
+
+MIT License
