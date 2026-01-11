@@ -77,7 +77,8 @@
         .piece-main.blue { fill: #6366f1; }
         .piece-main.selected { stroke: white; stroke-width: 4px; filter: brightness(1.1); }
         .piece-main.victory-piece { animation: piece-pulse 1.2s ease-in-out infinite; }
-        
+        .piece-main.my-turn { filter: brightness(1.2) drop-shadow(0 0 10px #fbbf24); }
+
         @keyframes piece-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
         @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes confetti-fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0; } }
@@ -290,10 +291,11 @@
                                 {pieces.map((p) => {
                                     const isV = victoryLine.includes(coordsKey(p.q, p.r));
                                     const pos = (animatingPiece && animatingPiece.id === p.id) ? { x: animatingPiece.x, y: animatingPiece.y } : hexToPixel(p.q, p.r);
+                                    const isMyTurn = !winner && p.player === turn;
                                     return (
                                         <g key={p.id} transform={`translate(${pos.x}, ${pos.y})`} style={{cursor: 'pointer'}} onClick={() => handlePieceClick(p)}>
                                             <circle r="30" fill="transparent" />
-                                            <circle r="20" className={`piece-main ${p.player} ${selectedId === p.id ? 'selected' : ''} ${isV ? 'victory-piece' : ''}`} style={{opacity: (winner && !isV) ? 0.2 : 1}} />
+                                            <circle r="20" className={`piece-main ${p.player} ${selectedId === p.id ? 'selected' : ''} ${isV ? 'victory-piece' : ''} ${isMyTurn ? 'my-turn' : ''}`} style={{opacity: (winner && !isV) ? 0.2 : 1}} />
                                             <circle r="14" fill="rgba(0,0,0,0.05)" style={{pointerEvents:'none', opacity: (winner && !isV) ? 0 : 1}} />
                                         </g>
                                     );
