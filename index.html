@@ -298,24 +298,63 @@
                                 }
                                 if (cq === piece.q && cr === piece.r) return;
 
-                                // この移動後の盤面を評価
                                 const testPieces = pieces.map(p => p.id === piece.id ? { ...p, q: cq, r: cr } : p);
                                 const myTestPieces = testPieces.filter(p => p.player === turn);
+                                const enemyPieces = testPieces.filter(p => p.player !== turn);
 
-                                // 隣接数をカウント（多いほど良い）
-                                let adjacentCount = 0;
+                                let score = 0;
+
+                                // 【最優先】勝利判定（即勝ちなら10000点）
+                                let adjacentPairs = 0;
                                 for (let i = 0; i < myTestPieces.length; i++) {
                                     for (let j = i + 1; j < myTestPieces.length; j++) {
                                         const p1 = myTestPieces[i], p2 = myTestPieces[j];
                                         if (DIRECTIONS.some(d => p1.q + d.q === p2.q && p1.r + d.r === p2.r)) {
-                                            adjacentCount++;
+                                            adjacentPairs++;
                                         }
                                     }
                                 }
+                                if (adjacentPairs >= 2) {
+                                    score = 10000;
+                                } else {
+                                    // 隣接ペア数（多いほど勝利に近い）
+                                    score += adjacentPairs * 500;
 
-                                // 中心に近いほど良い（ボーナス）
-                                const distToCenter = Math.abs(cq) + Math.abs(cr);
-                                const score = adjacentCount * 100 - distToCenter;
+                                    // コマ間の最小距離（近いほど良い）
+                                    let minDist = Infinity;
+                                    for (let i = 0; i < myTestPieces.length; i++) {
+                                        for (let j = i + 1; j < myTestPieces.length; j++) {
+                                            const p1 = myTestPieces[i], p2 = myTestPieces[j];
+                                            const dist = Math.abs(p1.q - p2.q) + Math.abs(p1.r - p2.r);
+                                            minDist = Math.min(minDist, dist);
+                                        }
+                                    }
+                                    score -= minDist * 30;
+
+                                    // コマの密集度（3つのコマの重心からの距離）
+                                    const centerQ = myTestPieces.reduce((sum, p) => sum + p.q, 0) / 3;
+                                    const centerR = myTestPieces.reduce((sum, p) => sum + p.r, 0) / 3;
+                                    const compactness = myTestPieces.reduce((sum, p) => {
+                                        return sum + Math.abs(p.q - centerQ) + Math.abs(p.r - centerR);
+                                    }, 0);
+                                    score -= compactness * 20;
+
+                                    // 【防御】相手の勝利を阻止
+                                    let enemyAdjacentPairs = 0;
+                                    for (let i = 0; i < enemyPieces.length; i++) {
+                                        for (let j = i + 1; j < enemyPieces.length; j++) {
+                                            const p1 = enemyPieces[i], p2 = enemyPieces[j];
+                                            if (DIRECTIONS.some(d => p1.q + d.q === p2.q && p1.r + d.r === p2.r)) {
+                                                enemyAdjacentPairs++;
+                                            }
+                                        }
+                                    }
+                                    score -= enemyAdjacentPairs * 200;
+
+                                    // 盤面中央寄りを優遇
+                                    const distToCenter = Math.abs(cq) + Math.abs(cr);
+                                    score -= distToCenter * 5;
+                                }
 
                                 if (score > bestScore) {
                                     bestScore = score;
@@ -356,18 +395,55 @@
                             candidates.forEach((dest, k) => {
                                 if (dest.c < 2) return;
 
-                                // タイル移動後の自コマ同士の距離を評価
-                                let totalDist = 0;
-                                for (let i = 0; i < myPieces.length; i++) {
-                                    for (let j = i + 1; j < myPieces.length; j++) {
-                                        const p1 = myPieces[i], p2 = myPieces[j];
-                                        const dist = Math.abs(p1.q - p2.q) + Math.abs(p1.r - p2.r);
-                                        totalDist += dist;
+                                let score = 0;
+
+                                // 自コマが乗っているタイルを移動先に近づける
+                                const myPieceTiles = myPieces.map(p => coordsKey(p.q, p.r));
+                                const isMyPieceOnSelectedTile = myPieceTiles.includes(coordsKey(selectedTile.q, selectedTile.r));
+
+                                if (isMyPieceOnSelectedTile) {
+                                    // 自コマが乗っているタイルは、他のコマに近づける
+                                    const selectedPiece = myPieces.find(p => p.q === selectedTile.q && p.r === selectedTile.r);
+                                    if (selectedPiece) {
+                                        const otherPieces = myPieces.filter(p => p.id !== selectedPiece.id);
+                                        const avgDist = otherPieces.reduce((sum, p) => {
+                                            // 移動後の距離を計算
+                                            return sum + Math.abs(dest.q - p.q) + Math.abs(dest.r - p.r);
+                                        }, 0) / otherPieces.length;
+                                        score -= avgDist * 50;
+                                    }
+                                } else {
+                                    // 空タイルの場合、自コマ間の距離を評価
+                                    let totalDist = 0;
+                                    for (let i = 0; i < myPieces.length; i++) {
+                                        for (let j = i + 1; j < myPieces.length; j++) {
+                                            const p1 = myPieces[i], p2 = myPieces[j];
+                                            const dist = Math.abs(p1.q - p2.q) + Math.abs(p1.r - p2.r);
+                                            totalDist += dist;
+                                        }
+                                    }
+                                    score -= totalDist * 10;
+                                }
+
+                                // 相手のコマが乗っているタイルを遠ざける（妨害）
+                                const enemyPieces = pieces.filter(p => p.player !== turn);
+                                const enemyPieceTiles = enemyPieces.map(p => coordsKey(p.q, p.r));
+                                const isEnemyPieceOnSelectedTile = enemyPieceTiles.includes(coordsKey(selectedTile.q, selectedTile.r));
+
+                                if (isEnemyPieceOnSelectedTile) {
+                                    const selectedEnemyPiece = enemyPieces.find(p => p.q === selectedTile.q && p.r === selectedTile.r);
+                                    if (selectedEnemyPiece) {
+                                        const otherEnemyPieces = enemyPieces.filter(p => p.id !== selectedEnemyPiece.id);
+                                        const avgDist = otherEnemyPieces.reduce((sum, p) => {
+                                            return sum + Math.abs(dest.q - p.q) + Math.abs(dest.r - p.r);
+                                        }, 0) / otherEnemyPieces.length;
+                                        // 相手を遠ざけるほど高得点
+                                        score += avgDist * 30;
                                     }
                                 }
 
-                                // 距離が短いほど良い（コマを近づける）
-                                const score = -totalDist + Math.random() * 10;
+                                // ランダム要素（予測不能性）
+                                score += Math.random() * 5;
 
                                 if (score > bestScore) {
                                     bestScore = score;
