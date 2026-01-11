@@ -168,7 +168,7 @@
                 const toPos = hexToPixel(toQ, toR);
                 const animate = (currentTime) => {
                     const elapsed = currentTime - startTime;
-                    const progress = Math.min(elapsed / 450, 1);
+                    const progress = Math.min(elapsed / 700, 1);
                     const eased = 1 - Math.pow(1 - progress, 3);
                     setAnimatingPiece({ id: pieceId, x: fromPos.x + (toPos.x - fromPos.x) * eased, y: fromPos.y + (toPos.y - fromPos.y) * eased });
                     if (progress < 1) animationFrameRef.current = requestAnimationFrame(animate);
