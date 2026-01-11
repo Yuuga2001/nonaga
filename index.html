@@ -67,7 +67,7 @@
 
         .board-svg { width: 100%; height: auto; max-height: 70vh; overflow: visible; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
         
-        .tile { transition: all 0.3s ease; fill: white; stroke: #e2e8f0; stroke-width: 1px; }
+        .tile { transition: all 0.8s ease; fill: white; stroke: #e2e8f0; stroke-width: 1px; }
         .tile.selected-origin { fill: #fee2e2; stroke: #f43f5e; stroke-width: 2px; }
         .tile.destination-hint { fill: #f0fdf4; stroke: #34d399; stroke-dasharray: 2; }
         .tile.selectable-empty { fill: white; stroke: #fbbf24; stroke-width: 2px; animation: tile-glow 2s ease-in-out infinite; }
@@ -75,7 +75,7 @@
         .tile.victory-tile.blue { fill: #eef2ff; stroke: #a5b4fc; }
         .tile.faded { opacity: 0.2; }
         
-        .piece-main { transition: all 0.3s ease; stroke: rgba(0,0,0,0.1); }
+        .piece-main { transition: all 0.8s ease; stroke: rgba(0,0,0,0.1); }
         .piece-main.red { fill: #f43f5e; }
         .piece-main.blue { fill: #6366f1; }
         .piece-main.selected { stroke: white; stroke-width: 4px; filter: brightness(1.1); }
@@ -168,7 +168,7 @@
                 const toPos = hexToPixel(toQ, toR);
                 const animate = (currentTime) => {
                     const elapsed = currentTime - startTime;
-                    const progress = Math.min(elapsed / 700, 1);
+                    const progress = Math.min(elapsed / 800, 1);
                     const eased = 1 - Math.pow(1 - progress, 3);
                     setAnimatingPiece({ id: pieceId, x: fromPos.x + (toPos.x - fromPos.x) * eased, y: fromPos.y + (toPos.y - fromPos.y) * eased });
                     if (progress < 1) animationFrameRef.current = requestAnimationFrame(animate);
