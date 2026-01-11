@@ -395,6 +395,23 @@
                             candidates.forEach((dest, k) => {
                                 if (dest.c < 2) return;
 
+                                // 接続性チェック: タイル移動後も盤面が繋がっているか確認
+                                const tempTiles = rem.map(t => ({ q: t.q, r: t.r }));
+                                tempTiles.push({ q: dest.q, r: dest.r });
+                                const queue = [tempTiles[0]];
+                                const visited = new Set([coordsKey(tempTiles[0].q, tempTiles[0].r)]);
+                                while (queue.length > 0) {
+                                    const cur = queue.shift();
+                                    DIRECTIONS.forEach(d => {
+                                        const k2 = coordsKey(cur.q + d.q, cur.r + d.r);
+                                        if (tempTiles.some(t => coordsKey(t.q, t.r) === k2) && !visited.has(k2)) {
+                                            visited.add(k2);
+                                            queue.push({ q: cur.q + d.q, r: cur.r + d.r });
+                                        }
+                                    });
+                                }
+                                if (visited.size !== tempTiles.length) return; // 盤面が分断される場合はスキップ
+
                                 let score = 0;
 
                                 // 自コマが乗っているタイルを移動先に近づける
