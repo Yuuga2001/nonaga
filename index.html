@@ -37,8 +37,12 @@
         .game-container.bg-indigo { background-color: #eef2ff; }
         .game-container.bg-slate { background-color: #f8fafc; }
         
-        .header { padding-top: 0.5rem; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
-        .game-title { font-size: 1.1rem; font-weight: 900; color: #1e293b; font-style: italic; text-transform: uppercase; letter-spacing: 0.3em; }
+        .header { padding-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; flex-shrink: 0; position: relative; }
+        .game-title { font-size: 1.1rem; font-weight: 900; color: #1e293b; font-style: italic; text-transform: uppercase; letter-spacing: 0.3em; position: absolute; left: 50%; transform: translateX(-50%); }
+        .mode-button { padding: 0.4rem 1rem; background-color: #6366f1; color: white; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; border: none; cursor: pointer; transition: background-color 0.2s; }
+        .mode-button:hover { background-color: #4f46e5; }
+        .mode-button.ai { background-color: #f59e0b; }
+        .mode-button.ai:hover { background-color: #d97706; }
 
         .status-container { margin-top: 0.25rem; display: flex; flex-direction: column; align-items: center; padding: 0 1rem; width: 100%; flex-shrink: 0; min-height: 70px; justify-content: center; }
         .victory-container { display: flex; flex-direction: column; align-items: center; z-index: 50; animation: slideInUp 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49) forwards; }
@@ -143,9 +147,36 @@
             const [isAnimating, setIsAnimating] = useState(false);
             const [animatingPiece, setAnimatingPiece] = useState(null);
             const [animatingTile, setAnimatingTile] = useState(null);
+            const [gameMode, setGameMode] = useState('pvp'); // 'pvp' or 'ai'
+            const [aiPlayer, setAiPlayer] = useState(null); // 'red' or 'blue'
+            const [aiThinking, setAiThinking] = useState(false);
             const animationFrameRef = useRef(null);
 
-            const resetGame = () => { setTiles(INITIAL_TILES); setPieces(INITIAL_PIECES); setTurn('red'); setPhase('move_token'); setSelectedId(null); setWinner(null); setVictoryLine([]); setIsAnimating(false); setAnimatingPiece(null); setAnimatingTile(null); };
+            const resetGame = () => {
+                setTiles(INITIAL_TILES);
+                setPieces(INITIAL_PIECES);
+                setTurn('red');
+                setPhase('move_token');
+                setSelectedId(null);
+                setWinner(null);
+                setVictoryLine([]);
+                setIsAnimating(false);
+                setAnimatingPiece(null);
+                setAnimatingTile(null);
+                setAiThinking(false);
+            };
+
+            const switchMode = () => {
+                const newMode = gameMode === 'pvp' ? 'ai' : 'pvp';
+                setGameMode(newMode);
+                if (newMode === 'ai') {
+                    setAiPlayer(Math.random() < 0.5 ? 'red' : 'blue');
+                } else {
+                    setAiPlayer(null);
+                }
+                resetGame();
+            };
+
             const tileMap = useMemo(() => new Set(tiles.map(t => coordsKey(t.q, t.r))), [tiles]);
             const pieceMap = useMemo(() => { const map = new Map(); pieces.forEach(p => map.set(coordsKey(p.q, p.r), p)); return map; }, [pieces]);
             const hexToPixel = (q, r) => ({ x: HEX_SIZE * (3/2 * q), y: HEX_SIZE * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r) });
@@ -210,9 +241,9 @@
                 animationFrameRef.current = requestAnimationFrame(animate);
             };
 
-            const handlePieceClick = (piece) => { if (winner || phase !== 'move_token' || piece.player !== turn || isAnimating) return; setSelectedId(selectedId === piece.id ? null : piece.id); };
+            const handlePieceClick = (piece) => { if (winner || phase !== 'move_token' || piece.player !== turn || isAnimating || aiThinking || (gameMode === 'ai' && turn === aiPlayer)) return; setSelectedId(selectedId === piece.id ? null : piece.id); };
             const handleTileClick = (tile, index) => {
-                if (winner || isAnimating) return;
+                if (winner || isAnimating || aiThinking || (gameMode === 'ai' && turn === aiPlayer)) return;
                 if (phase === 'move_token' && typeof selectedId === 'string') {
                     const piece = pieces.find(p => p.id === selectedId);
                     const moves = DIRECTIONS.map(dir => {
@@ -239,6 +270,127 @@
                     else alert("盤面を分断できません");
                 }
             };
+
+            const makeAIMove = () => {
+                if (aiThinking || isAnimating || winner) return;
+                setAiThinking(true);
+
+                setTimeout(() => {
+                    if (phase === 'move_token') {
+                        const myPieces = pieces.filter(p => p.player === turn);
+                        if (myPieces.length === 0) {
+                            setAiThinking(false);
+                            return;
+                        }
+
+                        // 全コマの全移動パターンを評価
+                        let bestMove = null;
+                        let bestScore = -Infinity;
+
+                        myPieces.forEach(piece => {
+                            DIRECTIONS.forEach(dir => {
+                                let cq = piece.q, cr = piece.r;
+                                while (true) {
+                                    const nq = cq + dir.q, nr = cr + dir.r;
+                                    if (!tileMap.has(coordsKey(nq, nr))) break;
+                                    if (pieceMap.has(coordsKey(nq, nr))) break;
+                                    cq = nq; cr = nr;
+                                }
+                                if (cq === piece.q && cr === piece.r) return;
+
+                                // この移動後の盤面を評価
+                                const testPieces = pieces.map(p => p.id === piece.id ? { ...p, q: cq, r: cr } : p);
+                                const myTestPieces = testPieces.filter(p => p.player === turn);
+
+                                // 隣接数をカウント（多いほど良い）
+                                let adjacentCount = 0;
+                                for (let i = 0; i < myTestPieces.length; i++) {
+                                    for (let j = i + 1; j < myTestPieces.length; j++) {
+                                        const p1 = myTestPieces[i], p2 = myTestPieces[j];
+                                        if (DIRECTIONS.some(d => p1.q + d.q === p2.q && p1.r + d.r === p2.r)) {
+                                            adjacentCount++;
+                                        }
+                                    }
+                                }
+
+                                // 中心に近いほど良い（ボーナス）
+                                const distToCenter = Math.abs(cq) + Math.abs(cr);
+                                const score = adjacentCount * 100 - distToCenter;
+
+                                if (score > bestScore) {
+                                    bestScore = score;
+                                    bestMove = { piece, dest: { q: cq, r: cr } };
+                                }
+                            });
+                        });
+
+                        if (bestMove) {
+                            setIsAnimating(true);
+                            animatePieceMove(bestMove.piece.id, bestMove.piece.q, bestMove.piece.r, bestMove.dest.q, bestMove.dest.r);
+                        }
+                    } else if (phase === 'move_tile') {
+                        const myPieces = pieces.filter(p => p.player === turn);
+                        const emptyTiles = tiles.map((t, i) => ({ tile: t, index: i }))
+                            .filter(({ tile }) => !pieceMap.has(coordsKey(tile.q, tile.r)));
+
+                        if (emptyTiles.length === 0) {
+                            setAiThinking(false);
+                            return;
+                        }
+
+                        let bestMove = null;
+                        let bestScore = -Infinity;
+
+                        emptyTiles.forEach(({ tile: selectedTile, index: selectedIndex }) => {
+                            const rem = tiles.filter((_, i) => i !== selectedIndex);
+                            const candidates = new Map();
+
+                            rem.forEach(t => DIRECTIONS.forEach(d => {
+                                const nQ = t.q + d.q, nR = t.r + d.r, k = coordsKey(nQ, nR);
+                                if (rem.some(rt => rt.q === nQ && rt.r === nR) || coordsKey(selectedTile.q, selectedTile.r) === k) return;
+                                const data = candidates.get(k) || { q: nQ, r: nR, c: 0 };
+                                data.c++;
+                                candidates.set(k, data);
+                            }));
+
+                            candidates.forEach((dest, k) => {
+                                if (dest.c < 2) return;
+
+                                // タイル移動後の自コマ同士の距離を評価
+                                let totalDist = 0;
+                                for (let i = 0; i < myPieces.length; i++) {
+                                    for (let j = i + 1; j < myPieces.length; j++) {
+                                        const p1 = myPieces[i], p2 = myPieces[j];
+                                        const dist = Math.abs(p1.q - p2.q) + Math.abs(p1.r - p2.r);
+                                        totalDist += dist;
+                                    }
+                                }
+
+                                // 距離が短いほど良い（コマを近づける）
+                                const score = -totalDist + Math.random() * 10;
+
+                                if (score > bestScore) {
+                                    bestScore = score;
+                                    bestMove = { selectedIndex, dest };
+                                }
+                            });
+                        });
+
+                        if (bestMove) {
+                            const tile = tiles[bestMove.selectedIndex];
+                            setIsAnimating(true);
+                            animateTileMove(bestMove.selectedIndex, tile.q, tile.r, bestMove.dest.q, bestMove.dest.r);
+                        }
+                    }
+                    setAiThinking(false);
+                }, 800);
+            };
+
+            useEffect(() => {
+                if (gameMode === 'ai' && turn === aiPlayer && !winner && !isAnimating && !aiThinking) {
+                    makeAIMove();
+                }
+            }, [turn, phase, gameMode, aiPlayer, winner, isAnimating, aiThinking]);
 
             const validDests = useMemo(() => {
                 if (winner || isAnimating) return [];
@@ -270,7 +422,12 @@
             return (
                 <div className={`game-container ${winner === 'red' ? 'bg-rose' : winner === 'blue' ? 'bg-indigo' : 'bg-slate'}`}>
                     {winner && <Confetti winner={winner} />}
-                    <header className="header"><h1 className="game-title">Nonaga</h1></header>
+                    <header className="header">
+                        <h1 className="game-title">Nonaga</h1>
+                        <button onClick={switchMode} className={`mode-button ${gameMode === 'ai' ? 'ai' : ''}`}>
+                            {gameMode === 'pvp' ? '対人モード' : `AI対戦 (${aiPlayer === 'red' ? '青' : '赤'}操作)`}
+                        </button>
+                    </header>
                     
                     <div className="status-container">
                         {winner ? (
@@ -286,7 +443,7 @@
                                     <div className={`player-indicator ${turn === 'blue' ? 'active' : ''}`}><div className="player-dot blue" />青</div>
                                 </div>
                                 <div style={{fontSize:11, fontWeight:800, color:'#94a3b8', marginTop:10, textTransform:'uppercase', letterSpacing: '0.1em'}}>
-                                    {phase === 'move_token' ? "1. コマを滑らせる" : "2. タイルを動かす"}
+                                    {aiThinking ? "🤖 AI思考中..." : (phase === 'move_token' ? "1. コマを滑らせる" : "2. タイルを動かす")}
                                 </div>
                             </div>
                         )}
