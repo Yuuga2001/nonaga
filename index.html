@@ -24,12 +24,13 @@
 
         #root { display: flex; flex-direction: column; min-height: 100%; flex: 1; }
         
-        .game-container { 
-            display: flex; 
-            flex-direction: column; 
-            flex: 1; 
-            transition: background-color 1s ease; 
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            transition: background-color 1s ease;
             width: 100%;
+            position: relative;
         }
         
         .game-container.bg-rose { background-color: #fff1f2; }
@@ -59,7 +60,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0 0.5rem; /* パディングをほぼゼロに */
+            padding: 1rem 0.5rem 2rem; /* 下部に余白を追加して影が切れないように */
             touch-action: none; /* ゲーム盤面のみ誤操作防止 */
             min-height: 0; /* flexboxで自動計算 */
             overflow: visible; /* 影が切れないように */
@@ -87,16 +88,21 @@
         @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes confetti-fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0; } }
         
-        /* ルール周りのスタイル - 下部の余白を強化 */
+        /* ルール周りのスタイル - 盤面の上に重ねる */
         .rules-container {
-            padding: 0 1rem 1.5rem; /* パディングをほぼゼロに */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 0 1rem 1.5rem;
             padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
             width: 100%;
             max-width: 32rem;
             margin: 0 auto;
-            flex-shrink: 0;
+            pointer-events: none; /* 盤面のクリックを邪魔しない */
+            z-index: 10;
         }
-        .rules-card { background: white; padding: 0.6rem; border-radius: 0.75rem; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; gap: 0.4rem; }
+        .rules-card { background: white; padding: 0.6rem; border-radius: 0.75rem; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; gap: 0.4rem; pointer-events: auto; }
         .goal-box { background: #fffbeb; padding: 0.75rem; border-radius: 0.75rem; display: flex; gap: 0.5rem; align-items: center; font-size: 0.8rem; color: #78350f; border: 1px solid #fde68a; }
         .steps-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
         .step-item { display: flex; gap: 0.5rem; align-items: center; color: #64748b; font-size: 0.7rem; }
