@@ -222,7 +222,6 @@
         .piece-main.selected {
             stroke: #fbbf24;
             stroke-width: 6px;
-            filter: drop-shadow(0 0 12px #fbbf24) drop-shadow(0 0 20px #fbbf24);
             animation: selected-pulse 0.8s ease-in-out infinite;
         }
         .piece-main.victory-piece { animation: piece-pulse 1.2s ease-in-out infinite; }
@@ -877,6 +876,25 @@
 
                     <div className="board-container" role="application" aria-label="NONAGA ゲームボード">
                         <svg viewBox={`${viewBounds.x} ${viewBounds.y} ${viewBounds.w} ${viewBounds.h}`} className="board-svg" role="img" aria-label="六角形タイルとコマのゲームボード">
+                            <defs>
+                                <filter id="selected-glow" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur1"/>
+                                    <feOffset in="blur1" dx="0" dy="0" result="offsetBlur1"/>
+                                    <feFlood floodColor="#fbbf24" floodOpacity="0.8" result="color1"/>
+                                    <feComposite in="color1" in2="offsetBlur1" operator="in" result="glow1"/>
+
+                                    <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="blur2"/>
+                                    <feOffset in="blur2" dx="0" dy="0" result="offsetBlur2"/>
+                                    <feFlood floodColor="#fbbf24" floodOpacity="0.6" result="color2"/>
+                                    <feComposite in="color2" in2="offsetBlur2" operator="in" result="glow2"/>
+
+                                    <feMerge>
+                                        <feMergeNode in="glow2"/>
+                                        <feMergeNode in="glow1"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+                            </defs>
                             <g>
                                 {tiles.map((tile, i) => {
                                     const pos = (animatingTile && animatingTile.index === i) ? { x: animatingTile.x, y: animatingTile.y } : hexToPixel(tile.q, tile.r);
@@ -906,10 +924,11 @@
                                     const isV = victoryLine.includes(coordsKey(p.q, p.r));
                                     const pos = (animatingPiece && animatingPiece.id === p.id) ? { x: animatingPiece.x, y: animatingPiece.y } : hexToPixel(p.q, p.r);
                                     const isMyTurn = !winner && p.player === turn && phase === 'move_token';
+                                    const isSelected = selectedId === p.id;
                                     return (
                                         <g key={p.id} transform={`translate(${pos.x}, ${pos.y})`} style={{cursor: 'pointer'}} onClick={() => handlePieceClick(p)}>
                                             <circle r="30" fill="transparent" />
-                                            <circle r="20" className={`piece-main ${p.player} ${selectedId === p.id ? 'selected' : ''} ${isV ? 'victory-piece' : ''} ${isMyTurn ? 'my-turn' : ''}`} style={{opacity: (winner && !isV) ? 0.2 : 1}} />
+                                            <circle r="20" className={`piece-main ${p.player} ${isSelected ? 'selected' : ''} ${isV ? 'victory-piece' : ''} ${isMyTurn ? 'my-turn' : ''}`} style={{opacity: (winner && !isV) ? 0.2 : 1, filter: isSelected ? 'url(#selected-glow)' : 'none'}} />
                                             <circle r="14" fill="rgba(0,0,0,0.05)" style={{pointerEvents:'none', opacity: (winner && !isV) ? 0 : 1}} />
                                         </g>
                                     );
