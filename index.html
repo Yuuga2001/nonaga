@@ -239,6 +239,10 @@
                 setAnimatingPiece(null);
                 setAnimatingTile(null);
                 setAiThinking(false);
+                // AI対戦モードの場合、先攻後攻をランダムに再設定
+                if (gameMode === 'ai') {
+                    setAiPlayer(Math.random() < 0.5 ? 'red' : 'blue');
+                }
             };
 
             const switchMode = () => {
