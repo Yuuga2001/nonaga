@@ -165,6 +165,18 @@
         @keyframes tile-glow { 0%, 100% { stroke-width: 2px; } 50% { stroke-width: 3px; } }
         @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes confetti-fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0; } }
+        @keyframes shuffle-bounce { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+
+        .shuffle-container { background-color: rgba(255, 255, 255, 0.98); padding: 1rem 2rem; border-radius: 1rem; box-shadow: 0 10px 40px rgba(0,0,0,0.15); border: 2px solid #f1f5f9; animation: slideInUp 0.4s ease-out; }
+        .shuffle-text { font-size: 0.9rem; font-weight: 700; color: #64748b; margin-bottom: 0.75rem; text-align: center; }
+        .shuffle-players { display: flex; gap: 1.5rem; align-items: center; }
+        .shuffle-player { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; animation: shuffle-bounce 0.6s ease-in-out infinite; }
+        .shuffle-player:nth-child(1) { animation-delay: 0s; }
+        .shuffle-player:nth-child(2) { animation-delay: 0.15s; }
+        .shuffle-avatar { width: 3rem; height: 3rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .shuffle-avatar.ai { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); }
+        .shuffle-avatar.human { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
+        .shuffle-label { font-size: 0.75rem; font-weight: 600; color: #475569; }
         
         /* ルール周りのスタイル - 盤面の上に重ねる */
         .rules-container {
@@ -210,6 +222,25 @@
             return (<div style={{position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 100}}>{dots.map(d => (<div key={d.id} style={{ position: 'absolute', left: d.left, width: d.size, height: d.size, backgroundColor: d.color, borderRadius: '2px', animation: `confetti-fall 4s linear infinite`, animationDelay: d.delay }} />))}</div>);
         };
 
+        const ShuffleAnimation = () => {
+            return (
+                <div className="shuffle-container">
+                    <div className="shuffle-text">先攻を決めています...</div>
+                    <div className="shuffle-players">
+                        <div className="shuffle-player">
+                            <div className="shuffle-avatar ai">🤖</div>
+                            <div className="shuffle-label">AI</div>
+                        </div>
+                        <div style={{fontSize: '1.5rem', color: '#cbd5e1'}}>⚡</div>
+                        <div className="shuffle-player">
+                            <div className="shuffle-avatar human">👤</div>
+                            <div className="shuffle-label">あなた</div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const NonagaGame = () => {
             const [tiles, setTiles] = useState(INITIAL_TILES);
             const [pieces, setPieces] = useState(INITIAL_PIECES);
@@ -224,9 +255,16 @@
             const [gameMode, setGameMode] = useState('ai'); // 'pvp' or 'ai'
             const [aiPlayer, setAiPlayer] = useState(() => Math.random() < 0.5 ? 'red' : 'blue'); // 'red' or 'blue'
             const [aiThinking, setAiThinking] = useState(false);
+            const [isShuffling, setIsShuffling] = useState(true); // 初回はシャッフル表示
             const animationFrameRef = useRef(null);
+            const shuffleTimeoutRef = useRef(null);
 
             const resetGame = () => {
+                // タイマーをクリア
+                if (shuffleTimeoutRef.current) {
+                    clearTimeout(shuffleTimeoutRef.current);
+                }
+
                 setTiles(INITIAL_TILES);
                 setPieces(INITIAL_PIECES);
                 setTurn('red');
@@ -238,21 +276,50 @@
                 setAnimatingPiece(null);
                 setAnimatingTile(null);
                 setAiThinking(false);
-                // AI対戦モードの場合、先攻後攻をランダムに再設定
+
+                // AI対戦モードの場合、先攻後攻をランダムに再設定 + シャッフルアニメーション
                 if (gameMode === 'ai') {
-                    setAiPlayer(Math.random() < 0.5 ? 'red' : 'blue');
+                    setIsShuffling(true);
+                    const newAiPlayer = Math.random() < 0.5 ? 'red' : 'blue';
+                    shuffleTimeoutRef.current = setTimeout(() => {
+                        setAiPlayer(newAiPlayer);
+                        setIsShuffling(false);
+                    }, 1200);
                 }
             };
 
             const switchMode = () => {
+                // タイマーをクリア
+                if (shuffleTimeoutRef.current) {
+                    clearTimeout(shuffleTimeoutRef.current);
+                }
+
                 const newMode = gameMode === 'pvp' ? 'ai' : 'pvp';
                 setGameMode(newMode);
+
+                setTiles(INITIAL_TILES);
+                setPieces(INITIAL_PIECES);
+                setTurn('red');
+                setPhase('move_token');
+                setSelectedId(null);
+                setWinner(null);
+                setVictoryLine([]);
+                setIsAnimating(false);
+                setAnimatingPiece(null);
+                setAnimatingTile(null);
+                setAiThinking(false);
+
                 if (newMode === 'ai') {
-                    setAiPlayer(Math.random() < 0.5 ? 'red' : 'blue');
+                    setIsShuffling(true);
+                    const newAiPlayer = Math.random() < 0.5 ? 'red' : 'blue';
+                    shuffleTimeoutRef.current = setTimeout(() => {
+                        setAiPlayer(newAiPlayer);
+                        setIsShuffling(false);
+                    }, 1200);
                 } else {
                     setAiPlayer(null);
+                    setIsShuffling(false);
                 }
-                resetGame();
             };
 
             const tileMap = useMemo(() => new Set(tiles.map(t => coordsKey(t.q, t.r))), [tiles]);
@@ -319,9 +386,9 @@
                 animationFrameRef.current = requestAnimationFrame(animate);
             };
 
-            const handlePieceClick = (piece) => { if (winner || phase !== 'move_token' || piece.player !== turn || isAnimating || aiThinking || (gameMode === 'ai' && turn === aiPlayer)) return; setSelectedId(selectedId === piece.id ? null : piece.id); };
+            const handlePieceClick = (piece) => { if (winner || phase !== 'move_token' || piece.player !== turn || isAnimating || aiThinking || isShuffling || (gameMode === 'ai' && turn === aiPlayer)) return; setSelectedId(selectedId === piece.id ? null : piece.id); };
             const handleTileClick = (tile, index) => {
-                if (winner || isAnimating || aiThinking || (gameMode === 'ai' && turn === aiPlayer)) return;
+                if (winner || isAnimating || aiThinking || isShuffling || (gameMode === 'ai' && turn === aiPlayer)) return;
                 if (phase === 'move_token' && typeof selectedId === 'string') {
                     const piece = pieces.find(p => p.id === selectedId);
                     const moves = DIRECTIONS.map(dir => {
@@ -624,11 +691,25 @@
                 }, 800);
             };
 
+            // 初回マウント時のシャッフルアニメーション
             useEffect(() => {
-                if (gameMode === 'ai' && turn === aiPlayer && !winner && !isAnimating && !aiThinking) {
+                if (gameMode === 'ai' && isShuffling) {
+                    shuffleTimeoutRef.current = setTimeout(() => {
+                        setIsShuffling(false);
+                    }, 1200);
+                }
+                return () => {
+                    if (shuffleTimeoutRef.current) {
+                        clearTimeout(shuffleTimeoutRef.current);
+                    }
+                };
+            }, []);
+
+            useEffect(() => {
+                if (gameMode === 'ai' && turn === aiPlayer && !winner && !isAnimating && !aiThinking && !isShuffling) {
                     makeAIMove();
                 }
-            }, [turn, phase, gameMode, aiPlayer, winner, isAnimating, aiThinking]);
+            }, [turn, phase, gameMode, aiPlayer, winner, isAnimating, aiThinking, isShuffling]);
 
             const validDests = useMemo(() => {
                 if (winner || isAnimating) return [];
@@ -665,7 +746,9 @@
                     </header>
 
                     <div className="status-container">
-                        {winner ? (
+                        {isShuffling && gameMode === 'ai' ? (
+                            <ShuffleAnimation />
+                        ) : winner ? (
                             <div className="victory-container">
                                 <div className={`victory-badge ${winner}`}><span style={{fontSize:20, fontWeight:900}}>
                                     {gameMode === 'ai'
