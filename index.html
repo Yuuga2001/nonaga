@@ -221,8 +221,8 @@
         .piece-main.blue { fill: #6366f1; }
         .piece-main.selected {
             stroke: #fbbf24;
-            stroke-width: 6px;
-            animation: selected-pulse 0.8s ease-in-out infinite;
+            stroke-width: 8px;
+            animation: selected-pulse 0.6s ease-in-out infinite;
         }
         .piece-main.victory-piece { animation: piece-pulse 1.2s ease-in-out infinite; }
         .piece-main.my-turn { stroke: #fbbf24; stroke-width: 2px; animation: tile-glow 2s ease-in-out infinite; }
@@ -231,12 +231,12 @@
         @keyframes tile-glow { 0%, 100% { stroke-width: 2px; } 50% { stroke-width: 3px; } }
         @keyframes selected-pulse {
             0%, 100% {
-                transform: scale(1.25);
-                stroke-width: 6px;
-            }
-            50% {
                 transform: scale(1.35);
                 stroke-width: 8px;
+            }
+            50% {
+                transform: scale(1.5);
+                stroke-width: 10px;
             }
         }
         @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -877,18 +877,24 @@
                     <div className="board-container" role="application" aria-label="NONAGA ゲームボード">
                         <svg viewBox={`${viewBounds.x} ${viewBounds.y} ${viewBounds.w} ${viewBounds.h}`} className="board-svg" role="img" aria-label="六角形タイルとコマのゲームボード">
                             <defs>
-                                <filter id="selected-glow" x="-50%" y="-50%" width="200%" height="200%">
-                                    <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur1"/>
+                                <filter id="selected-glow" x="-100%" y="-100%" width="300%" height="300%">
+                                    <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur1"/>
                                     <feOffset in="blur1" dx="0" dy="0" result="offsetBlur1"/>
-                                    <feFlood floodColor="#fbbf24" floodOpacity="0.8" result="color1"/>
+                                    <feFlood floodColor="#fbbf24" floodOpacity="1" result="color1"/>
                                     <feComposite in="color1" in2="offsetBlur1" operator="in" result="glow1"/>
 
-                                    <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="blur2"/>
+                                    <feGaussianBlur in="SourceAlpha" stdDeviation="12" result="blur2"/>
                                     <feOffset in="blur2" dx="0" dy="0" result="offsetBlur2"/>
-                                    <feFlood floodColor="#fbbf24" floodOpacity="0.6" result="color2"/>
+                                    <feFlood floodColor="#fbbf24" floodOpacity="0.8" result="color2"/>
                                     <feComposite in="color2" in2="offsetBlur2" operator="in" result="glow2"/>
 
+                                    <feGaussianBlur in="SourceAlpha" stdDeviation="18" result="blur3"/>
+                                    <feOffset in="blur3" dx="0" dy="0" result="offsetBlur3"/>
+                                    <feFlood floodColor="#fbbf24" floodOpacity="0.5" result="color3"/>
+                                    <feComposite in="color3" in2="offsetBlur3" operator="in" result="glow3"/>
+
                                     <feMerge>
+                                        <feMergeNode in="glow3"/>
                                         <feMergeNode in="glow2"/>
                                         <feMergeNode in="glow1"/>
                                         <feMergeNode in="SourceGraphic"/>
