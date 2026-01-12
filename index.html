@@ -485,18 +485,102 @@
                                 if (visited.size !== tempTiles.length) return; // 盤面が分断される場合はスキップ
 
                                 let score = 0;
+                                const enemyPieces = pieces.filter(p => p.player !== turn);
 
-                                // 自コマが乗っているタイルを移動先に近づける
+                                // 【最優先】相手の勝利を阻止する
+                                // タイル移動後の盤面で相手が次のターンに勝てるか判定
+                                const newTiles = [...rem, { q: dest.q, r: dest.r }];
+                                const newTileMap = new Set(newTiles.map(t => coordsKey(t.q, t.r)));
+
+                                // 相手の各コマについて、全方向にスライドさせて勝利判定
+                                let enemyCanWinNextTurn = false;
+                                for (const enemyPiece of enemyPieces) {
+                                    for (const dir of DIRECTIONS) {
+                                        let eq = enemyPiece.q, er = enemyPiece.r;
+                                        while (true) {
+                                            const nQ = eq + dir.q, nR = er + dir.r;
+                                            if (!newTileMap.has(coordsKey(nQ, nR))) break;
+                                            if (pieces.some(p => p.q === nQ && p.r === nR && p.id !== enemyPiece.id)) break;
+                                            eq = nQ; er = nR;
+                                        }
+                                        if (eq === enemyPiece.q && er === enemyPiece.r) continue;
+
+                                        // この移動後に相手が勝つか判定
+                                        const testEnemyPieces = enemyPieces.map(p =>
+                                            p.id === enemyPiece.id ? { ...p, q: eq, r: er } : p
+                                        );
+                                        let adjacentPairs = 0;
+                                        for (let i = 0; i < testEnemyPieces.length; i++) {
+                                            for (let j = i + 1; j < testEnemyPieces.length; j++) {
+                                                const p1 = testEnemyPieces[i], p2 = testEnemyPieces[j];
+                                                if (DIRECTIONS.some(d => p1.q + d.q === p2.q && p1.r + d.r === p2.r)) {
+                                                    adjacentPairs++;
+                                                }
+                                            }
+                                        }
+                                        if (adjacentPairs >= 2) {
+                                            enemyCanWinNextTurn = true;
+                                            break;
+                                        }
+                                    }
+                                    if (enemyCanWinNextTurn) break;
+                                }
+
+                                // 相手が次のターンで勝てるなら、このタイル移動で阻止できる場合は超高得点
+                                const enemyPieceTiles = enemyPieces.map(p => coordsKey(p.q, p.r));
+                                const isEnemyPieceOnSelectedTile = enemyPieceTiles.includes(coordsKey(selectedTile.q, selectedTile.r));
+
+                                if (enemyCanWinNextTurn && isEnemyPieceOnSelectedTile) {
+                                    // 相手のコマが乗っているタイルを動かすことで勝利を阻止
+                                    score += 15000; // 最優先
+                                } else if (enemyCanWinNextTurn) {
+                                    // 相手が勝てる状況だが、このタイル移動では阻止できない
+                                    score -= 5000; // ペナルティ
+                                }
+
+                                // 相手の隣接ペア数を計算（防御的評価）
+                                let enemyAdjacentPairs = 0;
+                                for (let i = 0; i < enemyPieces.length; i++) {
+                                    for (let j = i + 1; j < enemyPieces.length; j++) {
+                                        const p1 = enemyPieces[i], p2 = enemyPieces[j];
+                                        if (DIRECTIONS.some(d => p1.q + d.q === p2.q && p1.r + d.r === p2.r)) {
+                                            enemyAdjacentPairs++;
+                                        }
+                                    }
+                                }
+
+                                // 相手が乗っているタイルを動かす場合の評価
+                                if (isEnemyPieceOnSelectedTile) {
+                                    const selectedEnemyPiece = enemyPieces.find(p => p.q === selectedTile.q && p.r === selectedTile.r);
+                                    if (selectedEnemyPiece) {
+                                        const otherEnemyPieces = enemyPieces.filter(p => p.id !== selectedEnemyPiece.id);
+                                        const avgDistBefore = otherEnemyPieces.reduce((sum, p) => {
+                                            return sum + Math.abs(selectedTile.q - p.q) + Math.abs(selectedTile.r - p.r);
+                                        }, 0) / otherEnemyPieces.length;
+                                        const avgDistAfter = otherEnemyPieces.reduce((sum, p) => {
+                                            return sum + Math.abs(dest.q - p.q) + Math.abs(dest.r - p.r);
+                                        }, 0) / otherEnemyPieces.length;
+
+                                        // 相手を遠ざけるほど高得点
+                                        const distImprovement = avgDistAfter - avgDistBefore;
+                                        score += distImprovement * 100;
+
+                                        // 相手が既に隣接ペアを持っている場合は更に優先
+                                        if (enemyAdjacentPairs >= 1) {
+                                            score += distImprovement * 200;
+                                        }
+                                    }
+                                }
+
+                                // 自コマが乗っているタイルを移動する場合
                                 const myPieceTiles = myPieces.map(p => coordsKey(p.q, p.r));
                                 const isMyPieceOnSelectedTile = myPieceTiles.includes(coordsKey(selectedTile.q, selectedTile.r));
 
                                 if (isMyPieceOnSelectedTile) {
-                                    // 自コマが乗っているタイルは、他のコマに近づける
                                     const selectedPiece = myPieces.find(p => p.q === selectedTile.q && p.r === selectedTile.r);
                                     if (selectedPiece) {
                                         const otherPieces = myPieces.filter(p => p.id !== selectedPiece.id);
                                         const avgDist = otherPieces.reduce((sum, p) => {
-                                            // 移動後の距離を計算
                                             return sum + Math.abs(dest.q - p.q) + Math.abs(dest.r - p.r);
                                         }, 0) / otherPieces.length;
                                         score -= avgDist * 50;
@@ -514,25 +598,8 @@
                                     score -= totalDist * 10;
                                 }
 
-                                // 相手のコマが乗っているタイルを遠ざける（妨害）
-                                const enemyPieces = pieces.filter(p => p.player !== turn);
-                                const enemyPieceTiles = enemyPieces.map(p => coordsKey(p.q, p.r));
-                                const isEnemyPieceOnSelectedTile = enemyPieceTiles.includes(coordsKey(selectedTile.q, selectedTile.r));
-
-                                if (isEnemyPieceOnSelectedTile) {
-                                    const selectedEnemyPiece = enemyPieces.find(p => p.q === selectedTile.q && p.r === selectedTile.r);
-                                    if (selectedEnemyPiece) {
-                                        const otherEnemyPieces = enemyPieces.filter(p => p.id !== selectedEnemyPiece.id);
-                                        const avgDist = otherEnemyPieces.reduce((sum, p) => {
-                                            return sum + Math.abs(dest.q - p.q) + Math.abs(dest.r - p.r);
-                                        }, 0) / otherEnemyPieces.length;
-                                        // 相手を遠ざけるほど高得点
-                                        score += avgDist * 30;
-                                    }
-                                }
-
-                                // ランダム要素（予測不能性）
-                                score += Math.random() * 5;
+                                // ランダム要素（予測不能性）- ただし影響を小さく
+                                score += Math.random() * 3;
 
                                 if (score > bestScore) {
                                     bestScore = score;
