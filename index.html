@@ -216,15 +216,30 @@
         .tile.victory-tile.blue { fill: #eef2ff; stroke: #a5b4fc; }
         .tile.faded { opacity: 0.2; }
         
-        .piece-main { transition: all 0.8s ease; stroke: rgba(0,0,0,0.1); stroke-width: 1px; }
+        .piece-main { transition: all 0.3s ease; stroke: rgba(0,0,0,0.1); stroke-width: 1px; }
         .piece-main.red { fill: #f43f5e; }
         .piece-main.blue { fill: #6366f1; }
-        .piece-main.selected { stroke: white; stroke-width: 4px; }
+        .piece-main.selected {
+            stroke: #fbbf24;
+            stroke-width: 5px;
+            filter: drop-shadow(0 0 8px #fbbf24);
+            animation: selected-pulse 1s ease-in-out infinite;
+        }
         .piece-main.victory-piece { animation: piece-pulse 1.2s ease-in-out infinite; }
         .piece-main.my-turn { stroke: #fbbf24; stroke-width: 2px; animation: tile-glow 2s ease-in-out infinite; }
 
         @keyframes piece-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
         @keyframes tile-glow { 0%, 100% { stroke-width: 2px; } 50% { stroke-width: 3px; } }
+        @keyframes selected-pulse {
+            0%, 100% {
+                transform: scale(1.2);
+                stroke-width: 5px;
+            }
+            50% {
+                transform: scale(1.25);
+                stroke-width: 6px;
+            }
+        }
         @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes confetti-fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0; } }
         @keyframes shuffle-bounce { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
