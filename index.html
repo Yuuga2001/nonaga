@@ -117,8 +117,6 @@
         .mode-button.ai { box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
         .mode-button.ai:hover { background-color: #d97706; }
 
-        .reset-button-inline { padding: 0.5rem 1.5rem; background-color: #64748b; color: white; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; border: none; cursor: pointer; transition: background-color 0.2s; box-shadow: 0 4px 15px rgba(100, 116, 139, 0.2); margin-right: 1rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; min-width: 90px; }
-        .reset-button-inline:hover { background-color: #475569; }
         .victory-container { display: flex; flex-direction: column; align-items: center; z-index: 50; animation: slideInUp 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49) forwards; }
         .victory-badge { padding: 0.75rem 2rem; border-radius: 9999px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 4px solid white; color: white; }
         .victory-badge.red { background-color: #f43f5e; }
@@ -126,7 +124,8 @@
         
         .reset-button { margin-top: 0.75rem; padding: 0.5rem 1.5rem; background-color: #1e293b; color: white; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; border: none; cursor: pointer; }
         
-        .turn-indicator { background-color: rgba(255, 255, 255, 0.95); padding: 0.5rem 1.5rem; border-radius: 9999px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; display: flex; align-items: center; gap: 1rem; }
+        .turn-indicator { background-color: rgba(255, 255, 255, 0.95); padding: 0.5rem 1.5rem; border-radius: 9999px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: all 0.2s; }
+        .turn-indicator:hover { background-color: rgba(248, 250, 252, 0.98); box-shadow: 0 6px 20px rgba(0,0,0,0.08); transform: translateY(-1px); }
         .player-indicator { display: flex; align-items: center; gap: 0.5rem; opacity: 0.3; transition: all 0.3s ease; }
         .player-indicator.active { opacity: 1; font-weight: 700; transform: scale(1.1); }
         .player-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; }
@@ -679,10 +678,7 @@
                         ) : (
                             <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
                                 <div style={{display:'flex', alignItems:'center'}}>
-                                    <button onClick={resetGame} className="reset-button-inline">
-                                        リセット
-                                    </button>
-                                    <div className="turn-indicator">
+                                    <div className="turn-indicator" onClick={resetGame}>
                                         <div className={`player-indicator ${turn === 'red' ? 'active' : ''}`}>
                                             <div className="player-dot red" />
                                             {gameMode === 'ai' ? (aiPlayer === 'red' ? 'AI' : 'あなた') : '赤'}
