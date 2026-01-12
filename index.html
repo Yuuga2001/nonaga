@@ -220,7 +220,7 @@
             const [animatingPiece, setAnimatingPiece] = useState(null);
             const [animatingTile, setAnimatingTile] = useState(null);
             const [gameMode, setGameMode] = useState('ai'); // 'pvp' or 'ai'
-            const [aiPlayer, setAiPlayer] = useState('blue'); // 'red' or 'blue'
+            const [aiPlayer, setAiPlayer] = useState(() => Math.random() < 0.5 ? 'red' : 'blue'); // 'red' or 'blue'
             const [aiThinking, setAiThinking] = useState(false);
             const animationFrameRef = useRef(null);
 
