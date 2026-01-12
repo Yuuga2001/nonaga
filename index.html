@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" prefix="og: http://ogp.me/ns#">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
@@ -10,8 +10,13 @@
     <meta name="description" content="六角形の盤面を操り、3つのコマを繋げて勝利を目指す2人対戦ゲーム。コマだけでなく盤面のタイル自体を動かせる独特なルール。5分で理解、一生楽しめる奥深い戦術性。ブラウザで今すぐ無料プレイ！">
     <meta name="keywords" content="NONAGA,ノナガ,ボードゲーム,戦略ゲーム,六角形,ヘックス,2人対戦,オンラインゲーム,ブラウザゲーム,無料ゲーム,パズルゲーム,思考ゲーム,AI対戦">
     <meta name="author" content="NONAGA">
-    <meta name="robots" content="index, follow">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <link rel="canonical" href="https://nonaga.riverapp.jp/">
+
+    <!-- Language & Geo Tags -->
+    <meta http-equiv="content-language" content="ja">
+    <meta name="geo.region" content="JP">
+    <meta name="language" content="Japanese">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -34,6 +39,11 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="shortcut icon" href="favicon.png">
+
+    <!-- Preconnect for CDN performance -->
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="dns-prefetch" href="https://unpkg.com">
 
     <!-- Theme Color -->
     <meta name="theme-color" content="#6366f1">
@@ -47,7 +57,13 @@
       "alternateName": "ノナガ",
       "description": "六角形の盤面を操り、3つのコマを繋げて勝利を目指す2人対戦ゲーム。コマだけでなく盤面のタイル自体を動かせる独特なルールが特徴の戦略ゲーム。",
       "url": "https://nonaga.riverapp.jp/",
-      "image": "https://nonaga.riverapp.jp/ogp.png",
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://nonaga.riverapp.jp/ogp.png",
+        "width": 1200,
+        "height": 630
+      },
+      "screenshot": "https://nonaga.riverapp.jp/ogp.png",
       "applicationCategory": "Game",
       "gamePlatform": ["Web Browser", "iOS", "Android"],
       "numberOfPlayers": {
@@ -62,7 +78,8 @@
       "offers": {
         "@type": "Offer",
         "price": "0",
-        "priceCurrency": "JPY"
+        "priceCurrency": "JPY",
+        "availability": "https://schema.org/InStock"
       },
       "aggregateRating": {
         "@type": "AggregateRating",
@@ -70,6 +87,45 @@
         "ratingCount": "100",
         "bestRating": "5",
         "worstRating": "1"
+      },
+      "provider": {
+        "@type": "Organization",
+        "name": "NONAGA"
+      },
+      "datePublished": "2026-01-13",
+      "interactionStatistic": {
+        "@type": "InteractionCounter",
+        "interactionType": "https://schema.org/PlayGameAction",
+        "userInteractionCount": 100
+      }
+    }
+    </script>
+
+    <!-- BreadcrumbList Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+        "@type": "ListItem",
+        "position": 1,
+        "name": "ホーム",
+        "item": "https://nonaga.riverapp.jp/"
+      }]
+    }
+    </script>
+
+    <!-- WebSite Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "NONAGA",
+      "url": "https://nonaga.riverapp.jp/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://nonaga.riverapp.jp/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
       }
     }
     </script>
@@ -205,8 +261,11 @@
         .step-number { width: 1.35rem; height: 1.35rem; border-radius: 50%; background-color: #1e293b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body itemscope itemtype="https://schema.org/WebPage">
+    <!-- Skip to main content for accessibility and SEO -->
+    <a href="#main-content" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;">メインコンテンツへスキップ</a>
+
+    <div id="root" role="main" aria-label="NONAGA ゲーム盤面"></div>
     <script type="text/babel">
         const { useState, useMemo, useEffect, useRef } = React;
         const HEX_SIZE = 38;
@@ -757,9 +816,9 @@
             }, [selectedId, phase, tiles, pieces, tileMap, pieceMap, winner, isAnimating]);
 
             return (
-                <div className={`game-container ${winner === 'red' ? 'bg-rose' : winner === 'blue' ? 'bg-indigo' : 'bg-slate'}`}>
+                <div id="main-content" className={`game-container ${winner === 'red' ? 'bg-rose' : winner === 'blue' ? 'bg-indigo' : 'bg-slate'}`}>
                     {winner && <Confetti winner={winner} />}
-                    <header className="header">
+                    <header className="header" role="banner">
                         <h1 className="game-title">Nonaga</h1>
                     </header>
 
@@ -801,8 +860,8 @@
                         )}
                     </div>
 
-                    <div className="board-container">
-                        <svg viewBox={`${viewBounds.x} ${viewBounds.y} ${viewBounds.w} ${viewBounds.h}`} className="board-svg">
+                    <div className="board-container" role="application" aria-label="NONAGA ゲームボード">
+                        <svg viewBox={`${viewBounds.x} ${viewBounds.y} ${viewBounds.w} ${viewBounds.h}`} className="board-svg" role="img" aria-label="六角形タイルとコマのゲームボード">
                             <g>
                                 {tiles.map((tile, i) => {
                                     const pos = (animatingTile && animatingTile.index === i) ? { x: animatingTile.x, y: animatingTile.y } : hexToPixel(tile.q, tile.r);
@@ -844,7 +903,7 @@
                         </svg>
                     </div>
 
-                    <div className="rules-container">
+                    <aside className="rules-container" role="complementary" aria-label="ゲームルール">
                         <div className="rules-card">
                             <div className="goal-box">
                                 <span style={{fontSize:16}}>🏆</span>
@@ -861,6 +920,30 @@
                                 </div>
                             </div>
                         </div>
+                    </aside>
+
+                    {/* SEO用の非表示コンテンツ */}
+                    <div style={{position: 'absolute', left: '-10000px', width: '1px', height: '1px', overflow: 'hidden'}}>
+                        <h2>NONAGAとは</h2>
+                        <p>NONAGAは、六角形（ヘックス）の盤面を使った革新的な2人対戦ボードゲームです。コマを動かすだけでなく、盤面のタイル自体も動かせる独特のルールが特徴です。</p>
+                        <h3>ゲームの特徴</h3>
+                        <ul>
+                            <li>ブラウザで今すぐ無料プレイ可能</li>
+                            <li>AI対戦モード搭載 - 一人でも楽しめる</li>
+                            <li>2人対戦モード - 友達や家族と対戦</li>
+                            <li>スマートフォン・タブレット・PCに対応</li>
+                            <li>シンプルなルールで奥深い戦術性</li>
+                        </ul>
+                        <h3>遊び方</h3>
+                        <p>各プレイヤーは3つのコマを持ち、それらを連結させることで勝利します。1ターンは2つのフェーズから構成されます：</p>
+                        <ol>
+                            <li>コマを選んで端まで滑らせる</li>
+                            <li>空いているタイルを別の位置へ移動する</li>
+                        </ol>
+                        <h3>勝利条件</h3>
+                        <p>自分の3つのコマすべてが隣接した状態（線状、三角形、V字など）を作ると勝利です。</p>
+                        <h3>戦略のポイント</h3>
+                        <p>コマの移動だけでなく、タイルの配置を変えることで盤面全体をコントロールできます。相手のコマを分断したり、自分のコマを近づけたりする戦略的な思考が求められます。</p>
                     </div>
                 </div>
             );
