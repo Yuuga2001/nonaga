@@ -219,8 +219,8 @@
             const [isAnimating, setIsAnimating] = useState(false);
             const [animatingPiece, setAnimatingPiece] = useState(null);
             const [animatingTile, setAnimatingTile] = useState(null);
-            const [gameMode, setGameMode] = useState('pvp'); // 'pvp' or 'ai'
-            const [aiPlayer, setAiPlayer] = useState(null); // 'red' or 'blue'
+            const [gameMode, setGameMode] = useState('ai'); // 'pvp' or 'ai'
+            const [aiPlayer, setAiPlayer] = useState('blue'); // 'red' or 'blue'
             const [aiThinking, setAiThinking] = useState(false);
             const animationFrameRef = useRef(null);
 
@@ -684,7 +684,7 @@
                                         </div>
                                     </div>
                                     <button onClick={switchMode} className={`mode-button ${gameMode === 'ai' ? 'ai' : ''}`}>
-                                        {gameMode === 'pvp' ? '対人モード' : 'AI対戦モード'}
+                                        {gameMode === 'pvp' ? 'ふたりで対戦' : 'AI対戦モード'}
                                     </button>
                                 </div>
                                 <div style={{fontSize:11, fontWeight:800, color:'#94a3b8', marginTop:10, textTransform:'uppercase', letterSpacing: '0.1em'}}>
