@@ -111,21 +111,27 @@
         .status-container { position: fixed; top: 3rem; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; padding: 0 1rem; width: 100%; z-index: 10; pointer-events: none; }
         .status-container > * { pointer-events: auto; }
 
-        .mode-button { padding: 0.5rem 1.5rem; background-color: #6366f1; color: white; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; border: none; cursor: pointer; transition: background-color 0.2s; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2); margin-left: 1rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; min-width: 120px; }
+        .mode-button { padding: 0.5rem 1.5rem; background-color: #6366f1; color: white; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2); margin-left: 1rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; min-width: 120px; }
         .mode-button:hover { background-color: #4f46e5; }
         .mode-button.ai { background-color: #f59e0b; }
         .mode-button.ai { box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
         .mode-button.ai:hover { background-color: #d97706; }
+        .mode-button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.3); }
+        .mode-button:disabled:hover { background-color: #6366f1; transform: none; }
+        .mode-button.ai:disabled:hover { background-color: #f59e0b; }
 
         .victory-container { display: flex; flex-direction: column; align-items: center; z-index: 50; animation: slideInUp 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49) forwards; }
         .victory-badge { padding: 0.75rem 2rem; border-radius: 9999px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 4px solid white; color: white; }
         .victory-badge.red { background-color: #f43f5e; }
         .victory-badge.blue { background-color: #6366f1; }
         
-        .reset-button { margin-top: 0.75rem; padding: 0.5rem 1.5rem; background-color: #1e293b; color: white; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; border: none; cursor: pointer; }
+        .reset-button { margin-top: 0.75rem; padding: 0.5rem 1.5rem; background-color: #1e293b; color: white; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; }
+        .reset-button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.3); }
         
         .turn-indicator { background-color: rgba(255, 255, 255, 0.95); padding: 0.5rem 1.5rem; border-radius: 9999px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: all 0.2s; }
         .turn-indicator:hover { background-color: rgba(248, 250, 252, 0.98); box-shadow: 0 6px 20px rgba(0,0,0,0.08); transform: translateY(-1px); }
+        .turn-indicator.disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.3); pointer-events: none; }
+        .turn-indicator.disabled:hover { background-color: rgba(255, 255, 255, 0.95); box-shadow: 0 4px 15px rgba(0,0,0,0.05); transform: none; }
         .player-indicator { display: flex; align-items: center; gap: 0.5rem; opacity: 0.3; transition: all 0.3s ease; }
         .player-indicator.active { opacity: 1; font-weight: 700; transform: scale(1.1); }
         .player-dot { width: 0.8rem; height: 0.8rem; border-radius: 50%; }
@@ -371,6 +377,7 @@
                 const startTime = performance.now();
                 const fromPos = hexToPixel(fromQ, fromR);
                 const toPos = hexToPixel(toQ, toR);
+                const isAiTurn = gameMode === 'ai' && turn === aiPlayer;
                 const animate = (currentTime) => {
                     const elapsed = currentTime - startTime;
                     const progress = Math.min(elapsed / 800, 1);
@@ -378,9 +385,20 @@
                     setAnimatingTile({ index: tileIndex, x: fromPos.x + (toPos.x - fromPos.x) * eased, y: fromPos.y + (toPos.y - fromPos.y) * eased });
                     if (progress < 1) animationFrameRef.current = requestAnimationFrame(animate);
                     else {
-                        setAnimatingTile(null); setIsAnimating(false);
+                        setAnimatingTile(null);
                         const nt = [...tiles]; nt[tileIndex] = { q: toQ, r: toR };
-                        setTiles(nt); setPhase('move_token'); setTurn(turn === 'red' ? 'blue' : 'red'); setSelectedId(null);
+                        setTiles(nt); setPhase('move_token'); setSelectedId(null);
+
+                        // AIのターンの場合は0.5秒待ってから順番を切り替える
+                        if (isAiTurn) {
+                            setTimeout(() => {
+                                setIsAnimating(false);
+                                setTurn(turn === 'red' ? 'blue' : 'red');
+                            }, 500);
+                        } else {
+                            setIsAnimating(false);
+                            setTurn(turn === 'red' ? 'blue' : 'red');
+                        }
                     }
                 };
                 animationFrameRef.current = requestAnimationFrame(animate);
@@ -756,12 +774,12 @@
                                         : (winner === 'red' ? '赤の勝ち!' : '青の勝ち!')
                                     }
                                 </span></div>
-                                <button onClick={resetGame} className="reset-button">もう一度あそぶ</button>
+                                <button onClick={resetGame} className="reset-button" disabled={isAnimating || aiThinking}>もう一度あそぶ</button>
                             </div>
                         ) : (
                             <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
                                 <div style={{display:'flex', alignItems:'center'}}>
-                                    <div className="turn-indicator" onClick={resetGame}>
+                                    <div className={`turn-indicator ${(isAnimating || aiThinking) ? 'disabled' : ''}`} onClick={(isAnimating || aiThinking) ? undefined : resetGame}>
                                         <div className={`player-indicator ${turn === 'red' ? 'active' : ''}`}>
                                             <div className="player-dot red" />
                                             {gameMode === 'ai' ? (aiPlayer === 'red' ? 'AI' : 'あなた') : '赤'}
@@ -772,7 +790,7 @@
                                             {gameMode === 'ai' ? (aiPlayer === 'blue' ? 'AI' : 'あなた') : '青'}
                                         </div>
                                     </div>
-                                    <button onClick={switchMode} className={`mode-button ${gameMode === 'ai' ? 'ai' : ''}`}>
+                                    <button onClick={switchMode} className={`mode-button ${gameMode === 'ai' ? 'ai' : ''}`} disabled={isAnimating || aiThinking}>
                                         {gameMode === 'pvp' ? 'ふたりで対戦' : 'AI対戦モード'}
                                     </button>
                                 </div>
