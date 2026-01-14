@@ -2,7 +2,7 @@
 
 六角形の盤面を操り、3つのコマを繋げて勝利を目指す2人対戦ゲーム
 
-[![Play Now](https://img.shields.io/badge/🎮-今すぐプレイ-blue?style=for-the-badge)](https://main.d2sqhzibotcf4t.amplifyapp.com/)
+[![Play Now](https://img.shields.io/badge/🎮-今すぐプレイ-blue?style=for-the-badge)](https://nonaga.riverapp.jp/)
 
 ---
 
@@ -69,7 +69,7 @@ NONAGAは、コマを動かすだけでなく、盤面のタイル自体を動�
 
 ブラウザで即プレイ可能（インストール不要）:
 
-🎮 **[今すぐプレイ](https://main.d2sqhzibotcf4t.amplifyapp.com/)**
+🎮 **[今すぐプレイ](https://nonaga.riverapp.jp/)**
 
 ### ローカル環境で起動
 
