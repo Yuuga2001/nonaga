@@ -15,6 +15,7 @@ NONAGAは、コマを動かすだけでなく、盤面のタイル自体を動�
 ✨ **5分で理解、一生楽しめる**
 ⚡ **1ゲーム10分程度**
 🧠 **相手の一手先を読む駆け引き**
+🤖 **AI対戦モード搭載** - 一人でも楽しめる!
 
 ---
 
@@ -96,7 +97,7 @@ npx serve .
 
 **単一HTMLファイルによるシンプル実装**
 
-- **ファイル構成**: `index.html` 1ファイルのみ（22KB）
+- **ファイル構成**: `index.html` 1ファイルのみ（約40KB）
 - **依存関係**: CDN経由でReact 18を読み込み
 - **ビルド不要**: ブラウザで直接実行可能
 - **描画エンジン**: SVG（六角形ポリゴン）
@@ -132,53 +133,79 @@ npx serve .
 | アニメーション | ✅ スムーズな移動演出 |
 | モバイル対応 | ✅ タッチ操作・レスポンシブ |
 | リセット機能 | ✅ 即座に再戦可能 |
+| AI対戦モード | ✅ 評価関数ベースのAI |
+| ゲームモード切替 | ✅ PvP / AI切替対応 |
+| 先攻ランダム選択 | ✅ シャッフルアニメーション付き |
 
 ### コアアルゴリズム
 
-#### 1. スライド移動（index.html:187-195）
+#### 1. スライド移動（index.html:483-494）
 
 コマが選択方向に障害物（他のコマまたは盤面端）まで滑る
 
 ```javascript
-const slideInDirection = (q, r, dq, dr) => {
-  let cq = q, cr = r;
+// handleTileClick内で実装
+const moves = DIRECTIONS.map(dir => {
+  let curQ = piece.q, curR = piece.r, lastValid = null;
   while (true) {
-    const nq = cq + dq, nr = cr + dr;
-    if (!tileMap.has(coordsKey(nq, nr))) break;
-    if (pieceMap.has(coordsKey(nq, nr))) break;
-    cq = nq; cr = nr;
+    const nQ = curQ + dir.q, nR = curR + dir.r;
+    if (!tileMap.has(coordsKey(nQ, nR)) || pieceMap.has(coordsKey(nQ, nR))) break;
+    lastValid = { q: nQ, r: nR }; curQ = nQ; curR = nR;
   }
-  return { q: cq, r: cr };
-}
+  return lastValid;
+}).filter(Boolean);
 ```
 
-#### 2. 接続性チェック（index.html:198-207）
+#### 2. 接続性チェック（index.html:496-507）
 
 タイル移動後も盤面が繋がっているかBFSで検証
 
 ```javascript
-const isBoardConnected = (tiles, excludeIndex) => {
-  const temp = tiles.filter((_, i) => i !== excludeIndex);
-  if (temp.length === 0) return true;
-  const visited = new Set([coordsKey(temp[0].q, temp[0].r)]);
-  const queue = [temp[0]];
-  // BFS実装...
-  return visited.size === temp.length;
+const temp = tiles.filter((_, i) => i !== index);
+const q = [temp[0]], vis = new Set([coordsKey(temp[0].q, temp[0].r)]);
+while(q.length > 0) {
+  const cur = q.shift();
+  DIRECTIONS.forEach(d => {
+    const k = coordsKey(cur.q+d.q, cur.r+d.r);
+    if(temp.some(t => coordsKey(t.q, t.r) === k) && !vis.has(k)) {
+      vis.add(k); q.push({q:cur.q+d.q, r:cur.r+d.r});
+    }
+  });
 }
+if (vis.size === temp.length) setSelectedId(index);
 ```
 
-#### 3. 勝利判定（index.html:152-158）
+#### 3. 勝利判定（index.html:419-425）
 
-3つのコマのうち2組以上が隣接していればOK
+3つのコマのうち2組以上が隣接していれば勝利
 
 ```javascript
-const checkWin = (player) => {
-  const ps = pieces.filter(p => p.player === player);
-  const adj01 = areAdjacent(ps[0].q, ps[0].r, ps[1].q, ps[1].r);
-  const adj12 = areAdjacent(ps[1].q, ps[1].r, ps[2].q, ps[2].r);
-  const adj20 = areAdjacent(ps[2].q, ps[2].r, ps[0].q, ps[0].r);
-  return (adj01 && adj12) || (adj12 && adj20) || (adj20 && adj01);
-}
+const getVictoryCoords = (currentPieces, player) => {
+  const p = currentPieces.filter(cp => cp.player === player);
+  const isAdj = (a, b) => DIRECTIONS.some(d => a.q + d.q === b.q && a.r + d.r === b.r);
+  const c01 = isAdj(p[0], p[1]), c12 = isAdj(p[1], p[2]), c20 = isAdj(p[2], p[0]);
+  if ((c01 ? 1:0) + (c12 ? 1:0) + (c20 ? 1:0) >= 2) return p.map(item => coordsKey(item.q, item.r));
+  return null;
+};
+```
+
+#### 4. AI対戦ロジック（index.html:510-782）
+
+評価関数ベースのAI実装:
+
+```javascript
+// コマ移動フェーズの評価
+- 即勝利: 10000点
+- 隣接ペア形成: +500点/ペア
+- コマ間距離: -30点/距離
+- 密集度（重心からの距離）: -20点
+- 相手の隣接阻止: -200点/敵ペア
+- 盤面中央寄り: -5点/距離
+
+// タイル移動フェーズの評価
+- 相手勝利阻止: +15000点（最優先）
+- 相手コマのタイル移動: 距離改善×100-300点
+- 盤面接続性の検証: 分断される手は除外
 ```
 
 ---
@@ -192,19 +219,26 @@ const checkWin = (player) => {
   - 緑の移動可能先ハイライト
   - 黄色の自分のターン表示
 - ✨ **アニメーション**:
-  - コマ移動のスムーズな補間（cubic ease-out）
+  - コマ移動のスムーズな補間（cubic ease-out、800ms）
+  - タイル移動のスムーズな補間
   - 勝利時の紙吹雪演出
+  - 先攻決定時のシャッフルアニメーション（AI対戦モード）
 - 📱 **レスポンシブ**:
   - 動的ビューポート対応（100dvh）
   - セーフエリア考慮（iOS notch対応）
   - スマホでのスクロール対策
+- 🤖 **AI対戦モード**:
+  - PvP / AI切替ボタン
+  - AI思考中の表示
+  - AIターン時の操作ブロック
 
 ---
 
 ## 📝 今後の拡張案
 
 - [ ] Undo/Redo機能
-- [ ] AI対戦モード（ミニマックス法）
+- [ ] AI難易度選択（イージー/ノーマル/ハード）
+- [ ] より強いAI（ミニマックス法 + α-β枝刈り）
 - [ ] オンライン対戦（WebSocket）
 - [ ] テーマ切り替え（ダークモード）
 - [ ] タイマーモード
@@ -246,9 +280,11 @@ frontend:
 
 `index.html` を直接編集:
 
-- **スタイル**: `<style>` タグ内のCSS（10-99行目）
-- **ゲームロジック**: `<script type="text/babel">` 内のReactコード（103-325行目）
-- **初期配置**: `INITIAL_TILES` と `INITIAL_PIECES` 定数
+- **SEO/メタ情報**: `<head>` 内のメタタグ・JSON-LD（1-131行目）
+- **スタイル**: `<style>` タグ内のCSS（135-276行目）
+- **ゲームロジック**: `<script type="text/babel">` 内のReactコード（283-993行目）
+- **初期配置**: `INITIAL_TILES` と `INITIAL_PIECES` 定数（288-297行目）
+- **AI評価関数**: `makeAIMove` 関数内の評価重み（510-782行目）
 
 ---
 
