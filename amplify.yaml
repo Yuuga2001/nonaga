@@ -7,13 +7,14 @@ frontend:
         - cd online && npm ci
     build:
       commands:
-        # Build online frontend with environment variables
+        # Build online frontend
         - cd online && npm run build
-        # Move built files to 'online' folder (replacing source folder)
-        - rm -rf online-src-backup
-        - mv online online-src-backup
-        - mkdir -p online
-        - cp -r online-src-backup/dist/* online/
+        # Move built files to online/ root (replacing source files with built files)
+        - rm -rf online/src online/node_modules online/package.json online/package-lock.json online/tsconfig.json online/tsconfig.node.json online/vite.config.ts online/.env
+        - mv online/dist/* online/
+        - rm -rf online/dist
+        # Debug: show final structure
+        - ls -la online/
   artifacts:
     baseDirectory: .
     files:
@@ -26,7 +27,7 @@ frontend:
       - en/**/*
       - sitemap.xml
       - robots.txt
-      # Include built online frontend (now in 'online' folder)
+      # Include built online frontend (now directly in online/)
       - online/**/*
   customHeaders:
     - pattern: '**/*'
