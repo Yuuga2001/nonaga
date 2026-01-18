@@ -1,0 +1,26 @@
+#set($now = $util.time.nowISO8601())
+#set($input = $ctx.args.input)
+
+{
+  "version": "2018-05-29",
+  "operation": "UpdateItem",
+  "key": {
+    "gameId": $util.dynamodb.toDynamoDBJson($input.gameId)
+  },
+  "update": {
+    "expression": "SET tiles = :tiles, turn = :turn, phase = :phase, winner = :winner, victoryLine = :victoryLine, #status = :status, lastMoveAt = :lastMoveAt, updatedAt = :updatedAt",
+    "expressionNames": {
+      "#status": "status"
+    },
+    "expressionValues": {
+      ":tiles": $util.dynamodb.toDynamoDBJson($ctx.stash.updatedTiles),
+      ":turn": $util.dynamodb.toDynamoDBJson($ctx.stash.nextTurn),
+      ":phase": $util.dynamodb.toDynamoDBJson($ctx.stash.nextPhase),
+      ":winner": $util.dynamodb.toDynamoDBJson($ctx.stash.winner),
+      ":victoryLine": $util.dynamodb.toDynamoDBJson($ctx.stash.victoryLine),
+      ":status": $util.dynamodb.toDynamoDBJson($ctx.stash.nextStatus),
+      ":lastMoveAt": $util.dynamodb.toDynamoDBJson($now),
+      ":updatedAt": $util.dynamodb.toDynamoDBJson($now)
+    }
+  }
+}

@@ -1,0 +1,19 @@
+#set($now = $util.time.nowISO8601())
+#set($input = $ctx.args.input)
+
+{
+  "version": "2018-05-29",
+  "operation": "UpdateItem",
+  "key": {
+    "gameId": $util.dynamodb.toDynamoDBJson($input.gameId)
+  },
+  "update": {
+    "expression": "SET pieces = :pieces, phase = :phase, lastMoveAt = :lastMoveAt, updatedAt = :updatedAt",
+    "expressionValues": {
+      ":pieces": $util.dynamodb.toDynamoDBJson($ctx.stash.updatedPieces),
+      ":phase": $util.dynamodb.toDynamoDBJson("move_tile"),
+      ":lastMoveAt": $util.dynamodb.toDynamoDBJson($now),
+      ":updatedAt": $util.dynamodb.toDynamoDBJson($now)
+    }
+  }
+}

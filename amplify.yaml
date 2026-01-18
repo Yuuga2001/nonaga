@@ -1,10 +1,46 @@
 version: 1
 frontend:
   phases:
+    preBuild:
+      commands:
+        # Install dependencies for online frontend
+        - cd online && npm ci
     build:
       commands:
-        - echo "Static HTML deployment - no build required"
+        # Build online frontend with environment variables
+        - cd online && npm run build
+        # Move built files to online directory in root
+        - mkdir -p online-dist
+        - cp -r online/dist/* online-dist/
   artifacts:
     baseDirectory: .
     files:
-      - '**/*'
+      # Include existing static files
+      - index.html
+      - app.jsx
+      - app.css
+      - public/**/*
+      - about/**/*
+      - en/**/*
+      - sitemap.xml
+      - robots.txt
+      # Include built online frontend
+      - online-dist/**/*
+  customHeaders:
+    - pattern: '**/*'
+      headers:
+        - key: Cache-Control
+          value: 'public, max-age=31536000, immutable'
+    - pattern: '*.html'
+      headers:
+        - key: Cache-Control
+          value: 'public, max-age=0, must-revalidate'
+  rewrites:
+    # Rewrite /online/* to online-dist/*
+    - source: /online/<*>
+      target: /online-dist/<*>
+      status: '200'
+    # SPA fallback for online routes
+    - source: /online/game/<*>
+      target: /online-dist/index.html
+      status: '200'

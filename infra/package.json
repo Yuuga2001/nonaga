@@ -1,0 +1,24 @@
+{
+  "name": "nonaga-infra",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk",
+    "deploy:dev": "cdk deploy NonagaStack-Dev --require-approval never",
+    "deploy:prod": "cdk deploy NonagaStack-Prod --require-approval never",
+    "diff:dev": "cdk diff NonagaStack-Dev",
+    "diff:prod": "cdk diff NonagaStack-Prod",
+    "synth": "cdk synth"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.170.0",
+    "constructs": "^10.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "aws-cdk": "^2.170.0",
+    "typescript": "~5.7.2"
+  }
+}
