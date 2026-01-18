@@ -19,4 +19,22 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://nonaga.riverapp.jp/en/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://nonaga.riverapp.jp/" />
   </url>
+  <url>
+    <loc>https://nonaga.riverapp.jp/about/</loc>
+    <lastmod>2026-01-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://nonaga.riverapp.jp/about/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://nonaga.riverapp.jp/en/about/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nonaga.riverapp.jp/about/" />
+  </url>
+  <url>
+    <loc>https://nonaga.riverapp.jp/en/about/</loc>
+    <lastmod>2026-01-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://nonaga.riverapp.jp/about/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://nonaga.riverapp.jp/en/about/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nonaga.riverapp.jp/about/" />
+  </url>
 </urlset>

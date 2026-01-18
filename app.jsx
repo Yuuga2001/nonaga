@@ -25,31 +25,9 @@
                 phaseMoveToken: '1. コマを滑らせる',
                 phaseMoveTile: '2. タイルを動かす',
                 goal: '自分のコマを 3つ連結 させれば勝ち!',
-                goalHint: 'クリックで詳しい説明を見る',
+                goalHint: 'クリックで詳しい説明へ',
                 slideToEdge: '端までコマを滑らせる',
                 moveEmptyTile: '空きタイルを移動する',
-                seoTitle: 'NONAGAについて',
-                seoClose: '閉じる',
-                seoHeading: 'NONAGAとは',
-                seoIntro: 'NONAGAは、六角形（ヘックス）の盤面を動かしながら戦う2人対戦の戦略ボードゲームです。コマの移動に加えて盤面タイル自体も動かせるため、毎手が読み合いになるのが特徴です。',
-                seoFeaturesTitle: 'ゲームの特徴',
-                seoFeatures: [
-                    'ブラウザで今すぐ無料プレイ可能',
-                    'AI対戦モード搭載 - 一人でも楽しめる',
-                    '2人対戦モード - 友達や家族と対戦',
-                    'スマートフォン・タブレット・PCに対応',
-                    'シンプルなルールで奥深い戦術性'
-                ],
-                seoHowTitle: '遊び方',
-                seoHowIntro: '各プレイヤーは3つのコマを持ち、それらを連結させることで勝利します。1ターンは2つのフェーズから構成されます：',
-                seoHowSteps: [
-                    'コマを選んで端まで滑らせる',
-                    '空いているタイルを別の位置へ移動する'
-                ],
-                seoWinTitle: '勝利条件',
-                seoWinText: '自分の3つのコマすべてが隣接した状態（線状、三角形、V字など）を作ると勝利です。',
-                seoTipsTitle: '戦略のポイント',
-                seoTipsText: 'タイル配置を変えることで盤面全体をコントロールできます。相手のコマを分断したり、自分のコマを近づけたりする戦略的な判断が重要です。',
                 rulesLabel: 'ゲームルール',
                 boardLabel: 'NONAGA ゲームボード',
                 boardSvgLabel: '六角形タイルとコマのゲームボード',
@@ -73,31 +51,9 @@
                 phaseMoveToken: '1. Slide a piece',
                 phaseMoveTile: '2. Move a tile',
                 goal: 'Win by connecting your three pieces!',
-                goalHint: 'Click for more details',
+                goalHint: 'Click for details',
                 slideToEdge: 'Slide a piece to the edge',
                 moveEmptyTile: 'Move an empty tile',
-                seoTitle: 'About NONAGA',
-                seoClose: 'Close',
-                seoHeading: 'What is NONAGA?',
-                seoIntro: 'NONAGA is a tactical 2-player hex strategy game. You can move the board tiles themselves, creating a constantly shifting battlefield that rewards foresight and positioning.',
-                seoFeaturesTitle: 'Key features',
-                seoFeatures: [
-                    'Play instantly in your browser for free',
-                    'AI opponent mode for solo play',
-                    '2-player local battles with friends',
-                    'Responsive on mobile, tablet, and desktop',
-                    'Simple rules with deep strategic depth'
-                ],
-                seoHowTitle: 'How to play',
-                seoHowIntro: 'Each player controls three pieces. You win by connecting all three. Each turn has two phases:',
-                seoHowSteps: [
-                    'Slide a piece in one of six directions until it hits an obstacle',
-                    'Move an empty tile to a valid highlighted position'
-                ],
-                seoWinTitle: 'Win condition',
-                seoWinText: 'Connect your three pieces in a line, triangle, or V-shape.',
-                seoTipsTitle: 'Strategy tips',
-                seoTipsText: 'Reposition tiles to control the board flow. Try to separate your opponent while bringing your own pieces closer together.',
                 rulesLabel: 'Rules',
                 boardLabel: 'NONAGA game board',
                 boardSvgLabel: 'Hex tiles and pieces board',
@@ -161,9 +117,9 @@
             const [aiPlayer, setAiPlayer] = useState(() => Math.random() < 0.5 ? 'red' : 'blue'); // 'red' or 'blue'
             const [aiThinking, setAiThinking] = useState(false);
             const [isShuffling, setIsShuffling] = useState(true); // 初回はシャッフル表示
-            const [isSeoOpen, setIsSeoOpen] = useState(false);
             const animationFrameRef = useRef(null);
             const shuffleTimeoutRef = useRef(null);
+            const aboutUrl = LANG === 'en' ? '/en/about/' : '/about/';
 
             const resetGame = () => {
                 // タイマーをクリア
@@ -775,11 +731,11 @@
                                 className="goal-box"
                                 role="button"
                                 tabIndex={0}
-                                onClick={() => setIsSeoOpen(true)}
+                                onClick={() => { window.location.href = aboutUrl; }}
                                 onKeyDown={(event) => {
                                     if (event.key === 'Enter' || event.key === ' ') {
                                         event.preventDefault();
-                                        setIsSeoOpen(true);
+                                        window.location.href = aboutUrl;
                                     }
                                 }}
                             >
@@ -802,45 +758,6 @@
                         </div>
                     </aside>
 
-                    {isSeoOpen && (
-                        <div
-                            className="seo-overlay"
-                            role="dialog"
-                            aria-modal="true"
-                            aria-label={strings.seoTitle}
-                            onClick={() => setIsSeoOpen(false)}
-                        >
-                            <div className="seo-panel" onClick={(event) => event.stopPropagation()}>
-                                <div className="seo-panel-header">
-                                    <h2>{strings.seoTitle}</h2>
-                                    <button className="seo-close" type="button" onClick={() => setIsSeoOpen(false)}>
-                                        {strings.seoClose}
-                                    </button>
-                                </div>
-                                <div className="seo-panel-body">
-                                    <h3>{strings.seoHeading}</h3>
-                                    <p>{strings.seoIntro}</p>
-                                    <h3>{strings.seoFeaturesTitle}</h3>
-                                    <ul>
-                                        {strings.seoFeatures.map((item) => (
-                                            <li key={item}>{item}</li>
-                                        ))}
-                                    </ul>
-                                    <h3>{strings.seoHowTitle}</h3>
-                                    <p>{strings.seoHowIntro}</p>
-                                    <ol>
-                                        {strings.seoHowSteps.map((step) => (
-                                            <li key={step}>{step}</li>
-                                        ))}
-                                    </ol>
-                                    <h3>{strings.seoWinTitle}</h3>
-                                    <p>{strings.seoWinText}</p>
-                                    <h3>{strings.seoTipsTitle}</h3>
-                                    <p>{strings.seoTipsText}</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             );
         };
