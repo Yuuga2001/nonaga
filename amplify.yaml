@@ -9,10 +9,13 @@ frontend:
       commands:
         # Build online frontend
         - cd online && npm run build
-        # Move built files to online/ root (replacing source files with built files)
-        - rm -rf online/src online/node_modules online/package.json online/package-lock.json online/tsconfig.json online/tsconfig.node.json online/vite.config.ts online/.env
-        - mv online/dist/* online/
-        - rm -rf online/dist
+        # Stage built files to ensure copy succeeds before cleanup
+        - rm -rf online-build && mkdir -p online-build
+        - cp -R online/dist/. online-build/
+        # Replace source files with built files
+        - rm -rf online/src online/node_modules online/package.json online/package-lock.json online/tsconfig.json online/tsconfig.node.json online/vite.config.ts online/.env online/dist
+        - cp -R online-build/. online/
+        - rm -rf online-build
         # Debug: show final structure
         - ls -la online/
   artifacts:
