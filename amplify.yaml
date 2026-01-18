@@ -9,9 +9,11 @@ frontend:
       commands:
         # Build online frontend with environment variables
         - cd online && npm run build
-        # Copy built files directly to 'online' folder for direct serving
-        - rm -rf _online
-        - mv online/dist _online
+        # Move built files to 'online' folder (replacing source folder)
+        - rm -rf online-src-backup
+        - mv online online-src-backup
+        - mkdir -p online
+        - cp -r online-src-backup/dist/* online/
   artifacts:
     baseDirectory: .
     files:
@@ -24,8 +26,8 @@ frontend:
       - en/**/*
       - sitemap.xml
       - robots.txt
-      # Include built online frontend - will be served at /online/
-      - _online/**/*
+      # Include built online frontend (now in 'online' folder)
+      - online/**/*
   customHeaders:
     - pattern: '**/*'
       headers:
@@ -38,16 +40,5 @@ frontend:
   rewrites:
     # SPA fallback for /online/game/* routes
     - source: /online/game/<*>
-      target: /_online/index.html
-      status: '200'
-    # Rewrite /online to /_online/index.html
-    - source: /online
-      target: /_online/index.html
-      status: '200'
-    - source: /online/
-      target: /_online/index.html
-      status: '200'
-    # Rewrite /online/* to /_online/*
-    - source: /online/<*>
-      target: /_online/<*>
+      target: /online/index.html
       status: '200'
