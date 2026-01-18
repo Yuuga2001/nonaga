@@ -19,7 +19,7 @@ frontend:
         - cp -R "$CODEBUILD_SRC_DIR/online-build/." "$CODEBUILD_SRC_DIR/online/"
         - rm -rf "$CODEBUILD_SRC_DIR/online-build"
         # Fail build if dev HTML is still present
-        - 'if grep -n "/src/main.tsx" "$CODEBUILD_SRC_DIR/online/index.html"; then echo "ERROR: online/index.html is still dev HTML"; exit 1; fi'
+        - if grep -n "/src/main.tsx" "$CODEBUILD_SRC_DIR/online/index.html"; then echo "ERROR online index is dev HTML"; exit 1; fi
         # Debug: show final structure
         - ls -la "$CODEBUILD_SRC_DIR/online/"
   artifacts:
