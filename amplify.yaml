@@ -48,7 +48,7 @@ frontend:
         - key: Cache-Control
           value: 'public, max-age=0, must-revalidate'
   rewrites:
-    # SPA fallback for /online/game/* routes
-    - source: /online/game/<*>
+    # SPA fallback for /online/* routes
+    - source: /online/<*>
       target: /online/index.html
       status: '200'
