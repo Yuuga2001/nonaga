@@ -9,6 +9,8 @@ frontend:
       commands:
         # Build online frontend
         - cd online && npm run build
+        # Debug: verify build output exists
+        - ls -la online/dist
         # Stage built files to ensure copy succeeds before cleanup
         - rm -rf online-build && mkdir -p online-build
         - cp -R online/dist/. online-build/
@@ -16,6 +18,8 @@ frontend:
         - rm -rf online/src online/node_modules online/package.json online/package-lock.json online/tsconfig.json online/tsconfig.node.json online/vite.config.ts online/.env online/dist
         - cp -R online-build/. online/
         - rm -rf online-build
+        # Fail build if dev HTML is still present
+        - if rg -n "/src/main.tsx" online/index.html; then echo "ERROR: online/index.html is still dev HTML"; exit 1; fi
         # Debug: show final structure
         - ls -la online/
   artifacts:
