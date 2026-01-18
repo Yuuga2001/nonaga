@@ -3,25 +3,27 @@ frontend:
   phases:
     preBuild:
       commands:
+        - REPO_ROOT="$CODEBUILD_SRC_DIR/nonaga"
         # Install dependencies for online frontend
-        - cd "$CODEBUILD_SRC_DIR/online" && npm ci
+        - cd "$REPO_ROOT/online" && npm ci
     build:
       commands:
+        - REPO_ROOT="$CODEBUILD_SRC_DIR/nonaga"
         # Build online frontend
-        - cd "$CODEBUILD_SRC_DIR/online" && npm run build
+        - cd "$REPO_ROOT/online" && npm run build
         # Debug: verify build output exists
-        - ls -la "$CODEBUILD_SRC_DIR/online/dist"
+        - ls -la "$REPO_ROOT/online/dist"
         # Stage built files to ensure copy succeeds before cleanup
-        - rm -rf "$CODEBUILD_SRC_DIR/online-build" && mkdir -p "$CODEBUILD_SRC_DIR/online-build"
-        - cp -R "$CODEBUILD_SRC_DIR/online/dist/." "$CODEBUILD_SRC_DIR/online-build/"
+        - rm -rf "$REPO_ROOT/online-build" && mkdir -p "$REPO_ROOT/online-build"
+        - cp -R "$REPO_ROOT/online/dist/." "$REPO_ROOT/online-build/"
         # Replace source files with built files
-        - rm -rf "$CODEBUILD_SRC_DIR/online/src" "$CODEBUILD_SRC_DIR/online/node_modules" "$CODEBUILD_SRC_DIR/online/package.json" "$CODEBUILD_SRC_DIR/online/package-lock.json" "$CODEBUILD_SRC_DIR/online/tsconfig.json" "$CODEBUILD_SRC_DIR/online/tsconfig.node.json" "$CODEBUILD_SRC_DIR/online/vite.config.ts" "$CODEBUILD_SRC_DIR/online/.env" "$CODEBUILD_SRC_DIR/online/dist"
-        - cp -R "$CODEBUILD_SRC_DIR/online-build/." "$CODEBUILD_SRC_DIR/online/"
-        - rm -rf "$CODEBUILD_SRC_DIR/online-build"
+        - rm -rf "$REPO_ROOT/online/src" "$REPO_ROOT/online/node_modules" "$REPO_ROOT/online/package.json" "$REPO_ROOT/online/package-lock.json" "$REPO_ROOT/online/tsconfig.json" "$REPO_ROOT/online/tsconfig.node.json" "$REPO_ROOT/online/vite.config.ts" "$REPO_ROOT/online/.env" "$REPO_ROOT/online/dist"
+        - cp -R "$REPO_ROOT/online-build/." "$REPO_ROOT/online/"
+        - rm -rf "$REPO_ROOT/online-build"
         # Fail build if dev HTML is still present
-        - if grep -n "/src/main.tsx" "$CODEBUILD_SRC_DIR/online/index.html"; then echo "ERROR online index is dev HTML"; exit 1; fi
+        - if grep -n "/src/main.tsx" "$REPO_ROOT/online/index.html"; then echo "ERROR online index is dev HTML"; exit 1; fi
         # Debug: show final structure
-        - ls -la "$CODEBUILD_SRC_DIR/online/"
+        - ls -la "$REPO_ROOT/online/"
   artifacts:
     baseDirectory: .
     files:
