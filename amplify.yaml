@@ -36,11 +36,18 @@ frontend:
         - key: Cache-Control
           value: 'public, max-age=0, must-revalidate'
   rewrites:
-    # Rewrite /online/* to online-dist/*
-    - source: /online/<*>
-      target: /online-dist/<*>
-      status: '200'
-    # SPA fallback for online routes
+    # SPA fallback for online game routes (must be before generic rewrite)
     - source: /online/game/<*>
       target: /online-dist/index.html
+      status: '200'
+    # Rewrite /online/ to online-dist/index.html
+    - source: /online
+      target: /online-dist/index.html
+      status: '200'
+    - source: /online/
+      target: /online-dist/index.html
+      status: '200'
+    # Rewrite /online/assets/* to online-dist/assets/*
+    - source: /online/assets/<*>
+      target: /online-dist/assets/<*>
       status: '200'
