@@ -1,22 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { generateClient } from 'aws-amplify/api';
 import type { GameSession, PlayerColor } from '../lib/gameLogic';
 import { getPlayerColor } from '../lib/gameLogic';
+import { graphqlRequest, createSubscription } from '../lib/graphqlClient';
 import * as operations from '../graphql/operations';
-
-// Lazy initialize client to ensure Amplify is configured first
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let cachedClient: any = null;
-function getClient() {
-  if (!cachedClient) {
-    cachedClient = generateClient();
-  }
-  return cachedClient;
-}
 
 // Generate UUID with fallback for older browsers
 function generateUUID(): string {
-  // Use crypto.randomUUID if available (requires secure context)
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     try {
       return crypto.randomUUID();
@@ -24,7 +13,6 @@ function generateUUID(): string {
       // Fall through to fallback
     }
   }
-  // Fallback for older browsers or non-secure contexts
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
@@ -70,15 +58,14 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
   // Fetch game data
   const fetchGame = useCallback(async (id: string) => {
     try {
-      const result = await getClient().graphql({
-        query: operations.getGame,
-        variables: { gameId: id },
-      });
-      const gameData = (result as { data: { getGame: GameSession } }).data.getGame;
-      if (gameData) {
-        setGame(gameData);
+      const result = await graphqlRequest<{ getGame: GameSession }>(
+        operations.getGame,
+        { gameId: id }
+      );
+      if (result.getGame) {
+        setGame(result.getGame);
       }
-      return gameData;
+      return result.getGame;
     } catch (err) {
       console.error('Failed to fetch game:', err);
       setError('ゲームの取得に失敗しました');
@@ -92,25 +79,20 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
       subscriptionRef.current.unsubscribe();
     }
 
-    const subscription = getClient().graphql({
-      query: operations.onGameUpdated,
-      variables: { gameId: id },
-    });
-
-    // Handle observable subscription
-    if ('subscribe' in subscription) {
-      subscriptionRef.current = subscription.subscribe({
-        next: ({ data }: { data: { onGameUpdated: GameSession } }) => {
-          if (data.onGameUpdated) {
-            setGame(data.onGameUpdated);
-          }
-        },
-        error: (err: Error) => {
-          console.error('Subscription error:', err);
-          setError('接続エラーが発生しました');
-        },
-      });
-    }
+    subscriptionRef.current = createSubscription(
+      operations.onGameUpdated,
+      { gameId: id },
+      (data) => {
+        const gameData = (data as { onGameUpdated: GameSession }).onGameUpdated;
+        if (gameData) {
+          setGame(gameData);
+        }
+      },
+      (err) => {
+        console.error('Subscription error:', err);
+        setError('接続エラーが発生しました');
+      }
+    );
   }, []);
 
   // Create new game
@@ -118,14 +100,13 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
     setLoading(true);
     setError(null);
     try {
-      const result = await getClient().graphql({
-        query: operations.createGame,
-        variables: { hostPlayerId: playerId },
-      });
-      const newGame = (result as { data: { createGame: GameSession } }).data.createGame;
-      setGame(newGame);
-      subscribeToGame(newGame.gameId);
-      return newGame.gameId;
+      const result = await graphqlRequest<{ createGame: GameSession }>(
+        operations.createGame,
+        { hostPlayerId: playerId }
+      );
+      setGame(result.createGame);
+      subscribeToGame(result.createGame.gameId);
+      return result.createGame.gameId;
     } catch (err) {
       console.error('Failed to create game:', err);
       setError('ゲームの作成に失敗しました');
@@ -141,36 +122,30 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
       setLoading(true);
       setError(null);
       try {
-        // First fetch the game to check its status
         const existingGame = await fetchGame(id);
         if (!existingGame) {
           setError('ゲームが見つかりません');
           return false;
         }
 
-        // Check if already a player
         if (
           existingGame.hostPlayerId === playerId ||
           existingGame.guestPlayerId === playerId
         ) {
-          // Already in the game, just subscribe
           subscribeToGame(id);
           return true;
         }
 
-        // Check if game is waiting for player
         if (existingGame.status !== 'WAITING') {
           setError('このゲームは既に開始されています');
           return false;
         }
 
-        // Join the game
-        const result = await getClient().graphql({
-          query: operations.joinGame,
-          variables: { gameId: id, guestPlayerId: playerId },
-        });
-        const joinedGame = (result as { data: { joinGame: GameSession } }).data.joinGame;
-        setGame(joinedGame);
+        const result = await graphqlRequest<{ joinGame: GameSession }>(
+          operations.joinGame,
+          { gameId: id, guestPlayerId: playerId }
+        );
+        setGame(result.joinGame);
         subscribeToGame(id);
         return true;
       } catch (err) {
@@ -189,16 +164,13 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
     async (pieceId: string, toQ: number, toR: number) => {
       if (!game) return;
       try {
-        await getClient().graphql({
-          query: operations.movePiece,
-          variables: {
-            input: {
-              gameId: game.gameId,
-              playerId,
-              pieceId,
-              toQ,
-              toR,
-            },
+        await graphqlRequest(operations.movePiece, {
+          input: {
+            gameId: game.gameId,
+            playerId,
+            pieceId,
+            toQ,
+            toR,
           },
         });
       } catch (err) {
@@ -214,16 +186,13 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
     async (fromIndex: number, toQ: number, toR: number) => {
       if (!game) return;
       try {
-        await getClient().graphql({
-          query: operations.moveTile,
-          variables: {
-            input: {
-              gameId: game.gameId,
-              playerId,
-              fromIndex,
-              toQ,
-              toR,
-            },
+        await graphqlRequest(operations.moveTile, {
+          input: {
+            gameId: game.gameId,
+            playerId,
+            fromIndex,
+            toQ,
+            toR,
           },
         });
       } catch (err) {
@@ -238,12 +207,9 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
   const abandonCurrentGame = useCallback(async () => {
     if (!game) return;
     try {
-      await getClient().graphql({
-        query: operations.abandonGame,
-        variables: {
-          gameId: game.gameId,
-          playerId,
-        },
+      await graphqlRequest(operations.abandonGame, {
+        gameId: game.gameId,
+        playerId,
       });
     } catch (err) {
       console.error('Failed to abandon game:', err);
@@ -261,12 +227,11 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
       setError(null);
 
       try {
-        // First fetch the game
-        const result = await getClient().graphql({
-          query: operations.getGame,
-          variables: { gameId },
-        });
-        const existingGame = (result as { data: { getGame: GameSession | null } }).data.getGame;
+        const result = await graphqlRequest<{ getGame: GameSession | null }>(
+          operations.getGame,
+          { gameId }
+        );
+        const existingGame = result.getGame;
 
         if (cancelled) return;
 
@@ -276,32 +241,27 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
           return;
         }
 
-        // Check if already a player
         const isHost = existingGame.hostPlayerId === playerId;
         const isGuest = existingGame.guestPlayerId === playerId;
 
         if (isHost || isGuest) {
-          // Already in the game, just set state and subscribe
           setGame(existingGame);
           subscribeToGame(gameId);
           setLoading(false);
           return;
         }
 
-        // Not a player yet - try to join if game is waiting
         if (existingGame.status === 'WAITING') {
-          const joinResult = await getClient().graphql({
-            query: operations.joinGame,
-            variables: { gameId, guestPlayerId: playerId },
-          });
+          const joinResult = await graphqlRequest<{ joinGame: GameSession }>(
+            operations.joinGame,
+            { gameId, guestPlayerId: playerId }
+          );
 
           if (cancelled) return;
 
-          const joinedGame = (joinResult as { data: { joinGame: GameSession } }).data.joinGame;
-          setGame(joinedGame);
+          setGame(joinResult.joinGame);
           subscribeToGame(gameId);
         } else {
-          // Game is not waiting and we're not a player
           setGame(existingGame);
           setError('このゲームは既に開始されています');
         }

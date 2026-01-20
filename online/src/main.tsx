@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
-import { configureAmplify } from './lib/amplifyConfig';
 import './styles/app.css';
 
 // Error Boundary for catching initialization errors
@@ -60,13 +59,6 @@ class ErrorBoundary extends React.Component<
 
     return this.props.children;
   }
-}
-
-// Configure Amplify with error handling
-try {
-  configureAmplify();
-} catch (e) {
-  console.error('Failed to configure Amplify:', e);
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
