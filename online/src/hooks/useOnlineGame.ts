@@ -4,7 +4,15 @@ import type { GameSession, PlayerColor } from '../lib/gameLogic';
 import { getPlayerColor } from '../lib/gameLogic';
 import * as operations from '../graphql/operations';
 
-const client = generateClient();
+// Lazy initialize client to ensure Amplify is configured first
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cachedClient: any = null;
+function getClient() {
+  if (!cachedClient) {
+    cachedClient = generateClient();
+  }
+  return cachedClient;
+}
 
 // Generate UUID with fallback for older browsers
 function generateUUID(): string {
@@ -62,7 +70,7 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
   // Fetch game data
   const fetchGame = useCallback(async (id: string) => {
     try {
-      const result = await client.graphql({
+      const result = await getClient().graphql({
         query: operations.getGame,
         variables: { gameId: id },
       });
@@ -84,7 +92,7 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
       subscriptionRef.current.unsubscribe();
     }
 
-    const subscription = client.graphql({
+    const subscription = getClient().graphql({
       query: operations.onGameUpdated,
       variables: { gameId: id },
     });
@@ -110,7 +118,7 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
     setLoading(true);
     setError(null);
     try {
-      const result = await client.graphql({
+      const result = await getClient().graphql({
         query: operations.createGame,
         variables: { hostPlayerId: playerId },
       });
@@ -157,7 +165,7 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
         }
 
         // Join the game
-        const result = await client.graphql({
+        const result = await getClient().graphql({
           query: operations.joinGame,
           variables: { gameId: id, guestPlayerId: playerId },
         });
@@ -181,7 +189,7 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
     async (pieceId: string, toQ: number, toR: number) => {
       if (!game) return;
       try {
-        await client.graphql({
+        await getClient().graphql({
           query: operations.movePiece,
           variables: {
             input: {
@@ -206,7 +214,7 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
     async (fromIndex: number, toQ: number, toR: number) => {
       if (!game) return;
       try {
-        await client.graphql({
+        await getClient().graphql({
           query: operations.moveTile,
           variables: {
             input: {
@@ -230,7 +238,7 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
   const abandonCurrentGame = useCallback(async () => {
     if (!game) return;
     try {
-      await client.graphql({
+      await getClient().graphql({
         query: operations.abandonGame,
         variables: {
           gameId: game.gameId,
@@ -254,7 +262,7 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
 
       try {
         // First fetch the game
-        const result = await client.graphql({
+        const result = await getClient().graphql({
           query: operations.getGame,
           variables: { gameId },
         });
@@ -282,7 +290,7 @@ export function useOnlineGame(gameId?: string): UseOnlineGameResult {
 
         // Not a player yet - try to join if game is waiting
         if (existingGame.status === 'WAITING') {
-          const joinResult = await client.graphql({
+          const joinResult = await getClient().graphql({
             query: operations.joinGame,
             variables: { gameId, guestPlayerId: playerId },
           });
