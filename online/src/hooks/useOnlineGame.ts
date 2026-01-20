@@ -6,12 +6,30 @@ import * as operations from '../graphql/operations';
 
 const client = generateClient();
 
+// Generate UUID with fallback for older browsers
+function generateUUID(): string {
+  // Use crypto.randomUUID if available (requires secure context)
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    try {
+      return crypto.randomUUID();
+    } catch {
+      // Fall through to fallback
+    }
+  }
+  // Fallback for older browsers or non-secure contexts
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 // Get or create player ID from localStorage
 function getPlayerId(): string {
   const key = 'nonaga_player_id';
   let playerId = localStorage.getItem(key);
   if (!playerId) {
-    playerId = crypto.randomUUID();
+    playerId = generateUUID();
     localStorage.setItem(key, playerId);
   }
   return playerId;
