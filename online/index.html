@@ -341,79 +341,19 @@
     }
 
     // ========== GraphQL Operations ==========
-    var getGameQuery = '\
-      query GetGame($gameId: ID!) {\
-        getGame(gameId: $gameId) {\
-          gameId status hostPlayerId guestPlayerId hostColor\
-          tiles { q r }\
-          pieces { id player q r }\
-          turn phase winner victoryLine lastMoveAt createdAt updatedAt\
-        }\
-      }\
-    ';
+    var getGameQuery = 'query GetGame($gameId: ID!) { getGame(gameId: $gameId) { gameId status hostPlayerId guestPlayerId hostColor tiles { q r } pieces { id player q r } turn phase winner victoryLine lastMoveAt createdAt updatedAt } }';
 
-    var createGameMutation = '\
-      mutation CreateGame($hostPlayerId: String!) {\
-        createGame(hostPlayerId: $hostPlayerId) {\
-          gameId status hostPlayerId hostColor\
-          tiles { q r }\
-          pieces { id player q r }\
-          turn phase createdAt updatedAt\
-        }\
-      }\
-    ';
+    var createGameMutation = 'mutation CreateGame($hostPlayerId: String!) { createGame(hostPlayerId: $hostPlayerId) { gameId status hostPlayerId hostColor tiles { q r } pieces { id player q r } turn phase createdAt updatedAt } }';
 
-    var joinGameMutation = '\
-      mutation JoinGame($gameId: ID!, $guestPlayerId: String!) {\
-        joinGame(gameId: $gameId, guestPlayerId: $guestPlayerId) {\
-          gameId status hostPlayerId guestPlayerId hostColor\
-          tiles { q r }\
-          pieces { id player q r }\
-          turn phase createdAt updatedAt\
-        }\
-      }\
-    ';
+    var joinGameMutation = 'mutation JoinGame($gameId: ID!, $guestPlayerId: String!) { joinGame(gameId: $gameId, guestPlayerId: $guestPlayerId) { gameId status hostPlayerId guestPlayerId hostColor tiles { q r } pieces { id player q r } turn phase createdAt updatedAt } }';
 
-    var movePieceMutation = '\
-      mutation MovePiece($input: MovePieceInput!) {\
-        movePiece(input: $input) {\
-          gameId status hostPlayerId guestPlayerId hostColor\
-          tiles { q r }\
-          pieces { id player q r }\
-          turn phase winner victoryLine lastMoveAt updatedAt\
-        }\
-      }\
-    ';
+    var movePieceMutation = 'mutation MovePiece($input: MovePieceInput!) { movePiece(input: $input) { gameId status hostPlayerId guestPlayerId hostColor tiles { q r } pieces { id player q r } turn phase winner victoryLine lastMoveAt updatedAt } }';
 
-    var moveTileMutation = '\
-      mutation MoveTile($input: MoveTileInput!) {\
-        moveTile(input: $input) {\
-          gameId status hostPlayerId guestPlayerId hostColor\
-          tiles { q r }\
-          pieces { id player q r }\
-          turn phase winner victoryLine lastMoveAt updatedAt\
-        }\
-      }\
-    ';
+    var moveTileMutation = 'mutation MoveTile($input: MoveTileInput!) { moveTile(input: $input) { gameId status hostPlayerId guestPlayerId hostColor tiles { q r } pieces { id player q r } turn phase winner victoryLine lastMoveAt updatedAt } }';
 
-    var abandonGameMutation = '\
-      mutation AbandonGame($gameId: ID!, $playerId: String!) {\
-        abandonGame(gameId: $gameId, playerId: $playerId) {\
-          gameId status winner phase updatedAt\
-        }\
-      }\
-    ';
+    var abandonGameMutation = 'mutation AbandonGame($gameId: ID!, $playerId: String!) { abandonGame(gameId: $gameId, playerId: $playerId) { gameId status winner phase updatedAt } }';
 
-    var onGameUpdatedSubscription = '\
-      subscription OnGameUpdated($gameId: ID!) {\
-        onGameUpdated(gameId: $gameId) {\
-          gameId status hostPlayerId guestPlayerId hostColor\
-          tiles { q r }\
-          pieces { id player q r }\
-          turn phase winner victoryLine lastMoveAt updatedAt\
-        }\
-      }\
-    ';
+    var onGameUpdatedSubscription = 'subscription OnGameUpdated($gameId: ID!) { onGameUpdated(gameId: $gameId) { gameId status hostPlayerId guestPlayerId hostColor tiles { q r } pieces { id player q r } turn phase winner victoryLine lastMoveAt updatedAt } }';
 
     // ========== GraphQL Client ==========
     function graphqlRequest(query, variables) {
@@ -455,21 +395,39 @@
       var ws = null;
       var subscriptionId = null;
       var keepAliveTimeout = null;
+      var isConnected = false;
 
       function connect() {
-        ws = new WebSocket(wsUrl, ['graphql-ws']);
+        try {
+          ws = new WebSocket(wsUrl, ['graphql-ws']);
+        } catch (e) {
+          console.error('WebSocket creation failed:', e);
+          onError(new Error('WebSocket creation failed'));
+          return;
+        }
 
         ws.onopen = function() {
+          console.log('WebSocket opened, sending connection_init');
           ws.send(JSON.stringify({ type: 'connection_init' }));
         };
 
         ws.onmessage = function(event) {
-          var message = JSON.parse(event.data);
+          var message;
+          try {
+            message = JSON.parse(event.data);
+          } catch (e) {
+            console.error('Failed to parse message:', e);
+            return;
+          }
+
+          console.log('WebSocket message:', message.type);
 
           switch (message.type) {
             case 'connection_ack':
+              console.log('Connection acknowledged, starting subscription');
+              isConnected = true;
               subscriptionId = generateUUID();
-              ws.send(JSON.stringify({
+              var subscribeMessage = {
                 id: subscriptionId,
                 type: 'start',
                 payload: {
@@ -481,34 +439,53 @@
                     }
                   }
                 }
-              }));
+              };
+              console.log('Sending subscription:', subscribeMessage);
+              ws.send(JSON.stringify(subscribeMessage));
+              break;
+
+            case 'start_ack':
+              console.log('Subscription started successfully');
               break;
 
             case 'ka':
               if (keepAliveTimeout) clearTimeout(keepAliveTimeout);
               keepAliveTimeout = setTimeout(function() {
+                console.log('Keep-alive timeout, reconnecting...');
                 if (ws) ws.close();
                 connect();
               }, 300000);
               break;
 
             case 'data':
+              console.log('Received data:', message.payload);
               if (message.payload && message.payload.data) {
                 onData(message.payload.data);
               }
               break;
 
             case 'error':
+              console.error('Subscription error:', message.payload);
               onError(new Error(message.payload && message.payload.errors && message.payload.errors[0] ? message.payload.errors[0].message : 'Subscription error'));
               break;
+
+            case 'complete':
+              console.log('Subscription completed');
+              break;
+
+            default:
+              console.log('Unknown message type:', message.type);
           }
         };
 
-        ws.onerror = function() {
+        ws.onerror = function(e) {
+          console.error('WebSocket error:', e);
           onError(new Error('WebSocket connection error'));
         };
 
-        ws.onclose = function() {
+        ws.onclose = function(e) {
+          console.log('WebSocket closed:', e.code, e.reason);
+          isConnected = false;
           if (keepAliveTimeout) clearTimeout(keepAliveTimeout);
         };
       }
@@ -517,12 +494,15 @@
 
       return {
         unsubscribe: function() {
+          console.log('Unsubscribing...');
           if (keepAliveTimeout) clearTimeout(keepAliveTimeout);
           if (ws && subscriptionId) {
             try {
               ws.send(JSON.stringify({ id: subscriptionId, type: 'stop' }));
               ws.close();
-            } catch (e) {}
+            } catch (e) {
+              console.error('Error during unsubscribe:', e);
+            }
           }
         }
       };
