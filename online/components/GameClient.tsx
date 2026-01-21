@@ -65,6 +65,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateRef = useRef<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isAnimatingRef = useRef(false);
 
   // Initialize client-side state
   useEffect(() => {
@@ -127,6 +128,9 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     }
 
     const poll = async () => {
+      // Skip polling during animation to prevent state conflicts
+      if (isAnimatingRef.current) return;
+
       try {
         const res = await fetch(`/api/game/${gameId}`);
         if (res.ok) {
@@ -137,9 +141,6 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
             const turnChanged = game?.turn !== data.turn;
             if (turnChanged) {
               setSelectedId(null);
-              setIsAnimating(false);
-              setAnimatingPiece(null);
-              setAnimatingTile(null);
             }
             setGame(data);
           }
@@ -257,6 +258,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         } else {
           setAnimatingPiece(null);
           setIsAnimating(false);
+          isAnimatingRef.current = false;
           sendMove('piece', pieceId, null, toQ, toR);
         }
       };
@@ -294,6 +296,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         } else {
           setAnimatingTile(null);
           setIsAnimating(false);
+          isAnimatingRef.current = false;
           sendMove('tile', null, tileIndex, toQ, toR);
         }
       };
@@ -329,6 +332,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
       );
       if (isValidDest) {
         setIsAnimating(true);
+        isAnimatingRef.current = true;
         animatePieceMove(selectedId, piece.q, piece.r, tile.q, tile.r);
       }
     } else if (
@@ -347,6 +351,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     if (phase === 'move_tile' && typeof selectedId === 'number') {
       const tile = tiles[selectedId];
       setIsAnimating(true);
+      isAnimatingRef.current = true;
       animateTileMove(selectedId, tile.q, tile.r, dest.q, dest.r);
     }
   };
