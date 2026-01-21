@@ -133,12 +133,15 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
           const data: GameSession = await res.json();
           if (data.updatedAt !== lastUpdateRef.current) {
             lastUpdateRef.current = data.updatedAt;
+            // Only reset selection when turn changes (opponent made a move)
+            const turnChanged = game?.turn !== data.turn;
+            if (turnChanged) {
+              setSelectedId(null);
+              setIsAnimating(false);
+              setAnimatingPiece(null);
+              setAnimatingTile(null);
+            }
             setGame(data);
-            // Reset animation state on server update
-            setSelectedId(null);
-            setIsAnimating(false);
-            setAnimatingPiece(null);
-            setAnimatingTile(null);
           }
         }
       } catch (err) {
