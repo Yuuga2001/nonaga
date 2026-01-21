@@ -227,6 +227,10 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
           const data = await res.json();
           setGame(data);
           lastUpdateRef.current = data.updatedAt;
+          setSelectedId(null);
+        } else {
+          const errorData = await res.json().catch(() => ({}));
+          console.error('Move failed:', res.status, errorData);
         }
       } catch (err) {
         console.error('Move error:', err);
@@ -258,8 +262,10 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         } else {
           setAnimatingPiece(null);
           setIsAnimating(false);
-          isAnimatingRef.current = false;
-          sendMove('piece', pieceId, null, toQ, toR);
+          // Keep isAnimatingRef.current = true until sendMove completes
+          sendMove('piece', pieceId, null, toQ, toR).finally(() => {
+            isAnimatingRef.current = false;
+          });
         }
       };
 
@@ -296,8 +302,10 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         } else {
           setAnimatingTile(null);
           setIsAnimating(false);
-          isAnimatingRef.current = false;
-          sendMove('tile', null, tileIndex, toQ, toR);
+          // Keep isAnimatingRef.current = true until sendMove completes
+          sendMove('tile', null, tileIndex, toQ, toR).finally(() => {
+            isAnimatingRef.current = false;
+          });
         }
       };
 
