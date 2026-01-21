@@ -36,7 +36,7 @@ export default function LobbyClient() {
 
     try {
       const playerId = getPlayerId();
-      const res = await fetch('/online/api/game', {
+      const res = await fetch('/api/game', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ playerId }),
@@ -47,7 +47,7 @@ export default function LobbyClient() {
       }
 
       const game = await res.json();
-      router.push(`/online/game/${game.gameId}`);
+      router.push(`/game/${game.gameId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setLoading(false);

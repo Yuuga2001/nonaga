@@ -79,7 +79,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     const fetchAndJoin = async () => {
       try {
         // First fetch current state
-        const res = await fetch(`/online/api/game/${gameId}`);
+        const res = await fetch(`/api/game/${gameId}`);
         if (!res.ok) {
           if (res.status === 404) {
             setError(strings.gameNotFound);
@@ -98,7 +98,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
           gameData.hostPlayerId !== playerId &&
           !gameData.guestPlayerId
         ) {
-          const joinRes = await fetch(`/online/api/game/${gameId}/join`, {
+          const joinRes = await fetch(`/api/game/${gameId}/join`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ playerId }),
@@ -128,7 +128,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
 
     const poll = async () => {
       try {
-        const res = await fetch(`/online/api/game/${gameId}`);
+        const res = await fetch(`/api/game/${gameId}`);
         if (res.ok) {
           const data: GameSession = await res.json();
           if (data.updatedAt !== lastUpdateRef.current) {
@@ -206,7 +206,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
       toR: number
     ) => {
       try {
-        const res = await fetch(`/online/api/game/${gameId}/move`, {
+        const res = await fetch(`/api/game/${gameId}/move`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -357,7 +357,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
 
   const handleAbandon = async () => {
     try {
-      await fetch(`/online/api/game/${gameId}`, {
+      await fetch(`/api/game/${gameId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ playerId }),
@@ -365,11 +365,11 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     } catch (err) {
       console.error('Abandon error:', err);
     }
-    router.push('/online');
+    router.push('/');
   };
 
   const handlePlayAgain = () => {
-    router.push('/online');
+    router.push('/');
   };
 
   // Loading state
@@ -390,7 +390,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
       <div className="game-container bg-slate">
         <div className="error-container">
           <p className="error-message">{error}</p>
-          <button onClick={() => router.push('/online')} className="back-button">
+          <button onClick={() => router.push('/')} className="back-button">
             {strings.backToLobby}
           </button>
         </div>

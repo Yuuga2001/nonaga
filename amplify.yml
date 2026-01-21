@@ -1,37 +1,20 @@
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - REPO_ROOT="$CODEBUILD_SRC_DIR/nonaga"
-        - cd "$REPO_ROOT/online" && npm install
-    build:
-      commands:
-        - REPO_ROOT="$CODEBUILD_SRC_DIR/nonaga"
-        - cd "$REPO_ROOT/online" && npm run build
-  artifacts:
-    baseDirectory: .
-    files:
-      # Static files for main site
-      - index.html
-      - app.jsx
-      - app.css
-      - public/**/*
-      - about/**/*
-      - en/**/*
-      - sitemap.xml
-      - robots.txt
-      # Next.js SSR output
-      - online/.next/**/*
-      - online/package.json
-      - online/next.config.js
-      - online/node_modules/**/*
-  customHeaders:
-    - pattern: '**/*'
-      headers:
-        - key: Cache-Control
-          value: 'public, max-age=31536000, immutable'
-    - pattern: '*.html'
-      headers:
-        - key: Cache-Control
-          value: 'public, max-age=0, must-revalidate'
+applications:
+  # Next.js SSRアプリ（オンライン対戦）
+  - appRoot: online
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm install
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+          - .next/cache/**/*
