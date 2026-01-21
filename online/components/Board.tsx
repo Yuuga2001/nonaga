@@ -1,4 +1,13 @@
-import { hexToPixel, coordsKey, type Tile, type Piece, type PlayerColor, type GamePhase } from '../../lib/gameLogic';
+'use client';
+
+import {
+  hexToPixel,
+  coordsKey,
+  type Tile,
+  type Piece,
+  type PlayerColor,
+  type GamePhase,
+} from '@/lib/gameLogic';
 
 interface BoardProps {
   tiles: Tile[];
@@ -19,7 +28,7 @@ interface BoardProps {
   onDestinationClick: (dest: Tile) => void;
 }
 
-function Board({
+export default function Board({
   tiles,
   pieces,
   selectedId,
@@ -178,5 +187,3 @@ function Board({
     </div>
   );
 }
-
-export default Board;

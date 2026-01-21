@@ -184,14 +184,12 @@ export function getValidTileDestinations(
   const remaining = tiles.filter((_, i) => i !== selectedIndex);
   const candidates = new Map<string, { q: number; r: number; count: number }>();
 
-  // Find all positions adjacent to remaining tiles
   remaining.forEach((t) => {
     DIRECTIONS.forEach((d) => {
       const nQ = t.q + d.q;
       const nR = t.r + d.r;
       const key = coordsKey(nQ, nR);
 
-      // Skip if already occupied by a tile
       if (
         remaining.some((rt) => rt.q === nQ && rt.r === nR) ||
         (tiles[selectedIndex].q === nQ && tiles[selectedIndex].r === nR)
@@ -208,7 +206,6 @@ export function getValidTileDestinations(
     });
   });
 
-  // Filter to positions adjacent to at least 2 tiles
   return Array.from(candidates.values())
     .filter((c) => c.count >= 2)
     .map(({ q, r }) => ({ q, r }));
@@ -333,12 +330,4 @@ export const I18N = {
   },
 };
 
-export function getLang(): 'ja' | 'en' {
-  const lang = (document.documentElement.lang || 'ja').toLowerCase();
-  return lang.startsWith('en') ? 'en' : 'ja';
-}
-
-export function getStrings() {
-  const lang = getLang();
-  return I18N[lang];
-}
+export type I18NStrings = typeof I18N.ja;

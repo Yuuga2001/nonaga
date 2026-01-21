@@ -1,34 +1,52 @@
+'use client';
+
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useOnlineGame } from '../hooks/useOnlineGame';
+import { useRouter } from 'next/navigation';
+import Board from './Board';
 import {
-  getStrings,
+  I18N,
+  type I18NStrings,
+  type GameSession,
+  type Tile,
+  type Piece,
+  type PlayerColor,
   coordsKey,
   hexToPixel,
   calculateViewBounds,
   getSlideDestinations,
   isBoardConnected,
   getValidTileDestinations,
-  type Tile,
-  type Piece,
-} from '../lib/gameLogic';
-import Board from './Board/Board';
+  getPlayerColor,
+} from '@/lib/gameLogic';
 
-function OnlineGame() {
-  const { gameId } = useParams<{ gameId: string }>();
-  const navigate = useNavigate();
-  const strings = getStrings();
+function getPlayerId(): string {
+  if (typeof window === 'undefined') return '';
+  let id = localStorage.getItem('nonaga_player_id');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('nonaga_player_id', id);
+  }
+  return id;
+}
 
-  const {
-    game,
-    myColor,
-    isMyTurn,
-    loading,
-    error,
-    sendMovePiece,
-    sendMoveTile,
-    abandonCurrentGame,
-  } = useOnlineGame(gameId);
+function getStrings(): I18NStrings {
+  if (typeof window === 'undefined') return I18N.ja;
+  const lang = (document.documentElement.lang || 'ja').toLowerCase();
+  return lang.startsWith('en') ? I18N.en : I18N.ja;
+}
+
+interface GameClientProps {
+  gameId: string;
+  initialGame: GameSession | null;
+}
+
+export default function GameClient({ gameId, initialGame }: GameClientProps) {
+  const router = useRouter();
+  const [strings, setStrings] = useState<I18NStrings>(I18N.ja);
+  const [playerId, setPlayerId] = useState<string>('');
+  const [game, setGame] = useState<GameSession | null>(initialGame);
+  const [loading, setLoading] = useState(!initialGame);
+  const [error, setError] = useState<string | null>(null);
 
   const [selectedId, setSelectedId] = useState<string | number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -46,19 +64,107 @@ function OnlineGame() {
 
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateRef = useRef<string | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Reset selection when game state changes from server
+  // Initialize client-side state
   useEffect(() => {
-    if (game && game.updatedAt !== lastUpdateRef.current) {
-      lastUpdateRef.current = game.updatedAt;
-      setSelectedId(null);
-      setIsAnimating(false);
-      setAnimatingPiece(null);
-      setAnimatingTile(null);
+    setStrings(getStrings());
+    setPlayerId(getPlayerId());
+  }, []);
+
+  // Fetch game and join if needed
+  useEffect(() => {
+    if (!playerId) return;
+
+    const fetchAndJoin = async () => {
+      try {
+        // First fetch current state
+        const res = await fetch(`/online/api/game/${gameId}`);
+        if (!res.ok) {
+          if (res.status === 404) {
+            setError(strings.gameNotFound);
+          } else {
+            setError('Failed to load game');
+          }
+          setLoading(false);
+          return;
+        }
+
+        let gameData: GameSession = await res.json();
+
+        // Join if waiting and not already a player
+        if (
+          gameData.status === 'WAITING' &&
+          gameData.hostPlayerId !== playerId &&
+          !gameData.guestPlayerId
+        ) {
+          const joinRes = await fetch(`/online/api/game/${gameId}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playerId }),
+          });
+
+          if (joinRes.ok) {
+            gameData = await joinRes.json();
+          }
+        }
+
+        setGame(gameData);
+        setLoading(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+        setLoading(false);
+      }
+    };
+
+    fetchAndJoin();
+  }, [gameId, playerId, strings.gameNotFound]);
+
+  // Polling for game updates (1 second interval)
+  useEffect(() => {
+    if (!game || game.status === 'FINISHED' || game.status === 'ABANDONED') {
+      return;
     }
-  }, [game]);
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/online/api/game/${gameId}`);
+        if (res.ok) {
+          const data: GameSession = await res.json();
+          if (data.updatedAt !== lastUpdateRef.current) {
+            lastUpdateRef.current = data.updatedAt;
+            setGame(data);
+            // Reset animation state on server update
+            setSelectedId(null);
+            setIsAnimating(false);
+            setAnimatingPiece(null);
+            setAnimatingTile(null);
+          }
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    };
+
+    pollingRef.current = setInterval(poll, 1000);
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, [game, gameId]);
 
   // Computed values
+  const myColor = useMemo(() => {
+    if (!game || !playerId) return null;
+    return getPlayerColor(game, playerId);
+  }, [game, playerId]);
+
+  const isMyTurn = useMemo(() => {
+    if (!game || !myColor) return false;
+    return game.status === 'PLAYING' && game.turn === myColor;
+  }, [game, myColor]);
+
   const tiles = game?.tiles || [];
   const pieces = game?.pieces || [];
   const phase = game?.phase || 'waiting';
@@ -71,9 +177,9 @@ function OnlineGame() {
     pieces.forEach((p) => map.set(coordsKey(p.q, p.r), p));
     return map;
   }, [pieces]);
+
   const viewBounds = useMemo(() => calculateViewBounds(tiles), [tiles]);
 
-  // Valid destinations for current selection
   const validDests = useMemo(() => {
     if (winner || isAnimating || !isMyTurn) return [];
 
@@ -89,6 +195,41 @@ function OnlineGame() {
 
     return [];
   }, [selectedId, phase, tiles, pieces, winner, isAnimating, isMyTurn]);
+
+  // Send move to server
+  const sendMove = useCallback(
+    async (
+      type: 'piece' | 'tile',
+      pieceId: string | null,
+      tileIndex: number | null,
+      toQ: number,
+      toR: number
+    ) => {
+      try {
+        const res = await fetch(`/online/api/game/${gameId}/move`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            playerId,
+            type,
+            pieceId,
+            tileIndex,
+            toQ,
+            toR,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setGame(data);
+          lastUpdateRef.current = data.updatedAt;
+        }
+      } catch (err) {
+        console.error('Move error:', err);
+      }
+    },
+    [gameId, playerId]
+  );
 
   // Animation functions
   const animatePieceMove = useCallback(
@@ -113,18 +254,23 @@ function OnlineGame() {
         } else {
           setAnimatingPiece(null);
           setIsAnimating(false);
-          // Send move to server
-          sendMovePiece(pieceId, toQ, toR);
+          sendMove('piece', pieceId, null, toQ, toR);
         }
       };
 
       animationFrameRef.current = requestAnimationFrame(animate);
     },
-    [sendMovePiece]
+    [sendMove]
   );
 
   const animateTileMove = useCallback(
-    (tileIndex: number, fromQ: number, fromR: number, toQ: number, toR: number) => {
+    (
+      tileIndex: number,
+      fromQ: number,
+      fromR: number,
+      toQ: number,
+      toR: number
+    ) => {
       const startTime = performance.now();
       const fromPos = hexToPixel(fromQ, fromR);
       const toPos = hexToPixel(toQ, toR);
@@ -145,14 +291,13 @@ function OnlineGame() {
         } else {
           setAnimatingTile(null);
           setIsAnimating(false);
-          // Send move to server
-          sendMoveTile(tileIndex, toQ, toR);
+          sendMove('tile', null, tileIndex, toQ, toR);
         }
       };
 
       animationFrameRef.current = requestAnimationFrame(animate);
     },
-    [sendMoveTile]
+    [sendMove]
   );
 
   // Event handlers
@@ -187,7 +332,6 @@ function OnlineGame() {
       phase === 'move_tile' &&
       !pieceMap.has(coordsKey(tile.q, tile.r))
     ) {
-      // Check if removing this tile keeps the board connected
       if (isBoardConnected(tiles, index)) {
         setSelectedId(index);
       } else {
@@ -211,8 +355,21 @@ function OnlineGame() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleAbandon = async () => {
+    try {
+      await fetch(`/online/api/game/${gameId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId }),
+      });
+    } catch (err) {
+      console.error('Abandon error:', err);
+    }
+    router.push('/online');
+  };
+
   const handlePlayAgain = () => {
-    navigate('/');
+    router.push('/online');
   };
 
   // Loading state
@@ -233,7 +390,7 @@ function OnlineGame() {
       <div className="game-container bg-slate">
         <div className="error-container">
           <p className="error-message">{error}</p>
-          <button onClick={() => navigate('/')} className="back-button">
+          <button onClick={() => router.push('/online')} className="back-button">
             {strings.backToLobby}
           </button>
         </div>
@@ -257,7 +414,7 @@ function OnlineGame() {
             <div className="url-box">
               <input
                 type="text"
-                value={window.location.href}
+                value={typeof window !== 'undefined' ? window.location.href : ''}
                 readOnly
                 className="url-input"
               />
@@ -265,13 +422,7 @@ function OnlineGame() {
                 {copied ? strings.copied : strings.copyUrl}
               </button>
             </div>
-            <button
-              onClick={() => {
-                abandonCurrentGame();
-                navigate('/');
-              }}
-              className="cancel-button"
-            >
+            <button onClick={handleAbandon} className="cancel-button">
               {strings.backToLobby}
             </button>
           </div>
@@ -297,7 +448,8 @@ function OnlineGame() {
   }
 
   // Main game view
-  const bgClass = winner === 'red' ? 'bg-rose' : winner === 'blue' ? 'bg-indigo' : 'bg-slate';
+  const bgClass =
+    winner === 'red' ? 'bg-rose' : winner === 'blue' ? 'bg-indigo' : 'bg-slate';
 
   return (
     <div className={`game-container ${bgClass}`}>
@@ -318,15 +470,27 @@ function OnlineGame() {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div className={`turn-indicator ${isAnimating ? 'disabled' : ''}`}>
-                <div className={`player-indicator ${game?.turn === 'red' ? 'active' : ''}`}>
+                <div
+                  className={`player-indicator ${game?.turn === 'red' ? 'active' : ''}`}
+                >
                   <div className="player-dot red" />
                   {myColor === 'red' ? strings.you : strings.opponent}
                 </div>
-                <div style={{ width: 1, height: 12, background: '#e2e8f0' }} />
-                <div className={`player-indicator ${game?.turn === 'blue' ? 'active' : ''}`}>
+                <div
+                  style={{ width: 1, height: 12, background: '#e2e8f0' }}
+                />
+                <div
+                  className={`player-indicator ${game?.turn === 'blue' ? 'active' : ''}`}
+                >
                   <div className="player-dot blue" />
                   {myColor === 'blue' ? strings.you : strings.opponent}
                 </div>
@@ -374,7 +538,7 @@ function OnlineGame() {
       <aside className="rules-container">
         <div className="rules-card">
           <div className="goal-box">
-            <span style={{ fontSize: 16 }}>🏆</span>
+            <span style={{ fontSize: 16 }}>&#127942;</span>
             <div>
               <p>{strings.goal}</p>
               <p className="goal-hint">{strings.goalHint}</p>
@@ -395,5 +559,3 @@ function OnlineGame() {
     </div>
   );
 }
-
-export default OnlineGame;
