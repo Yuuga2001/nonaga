@@ -64,10 +64,11 @@ export function createSubscription(
   let keepAliveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   const connect = () => {
+    console.log('[WS] Connecting to:', realtimeEndpoint);
     ws = new WebSocket(wsUrl, ['graphql-ws']);
 
     ws.onopen = () => {
-      // Send connection init
+      console.log('[WS] Connection opened, sending init');
       ws?.send(JSON.stringify({
         type: 'connection_init',
       }));
@@ -75,10 +76,11 @@ export function createSubscription(
 
     ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
+      console.log('[WS] Message received:', message.type);
 
       switch (message.type) {
         case 'connection_ack':
-          // Connection established, send subscription
+          console.log('[WS] Connection acknowledged, starting subscription');
           subscriptionId = generateSubscriptionId();
           ws?.send(JSON.stringify({
             id: subscriptionId,
@@ -98,36 +100,46 @@ export function createSubscription(
           }));
           break;
 
+        case 'start_ack':
+          console.log('[WS] Subscription started successfully');
+          break;
+
         case 'ka':
           // Keep-alive, reset timeout
           if (keepAliveTimeout) {
             clearTimeout(keepAliveTimeout);
           }
           keepAliveTimeout = setTimeout(() => {
-            // Connection timed out, reconnect
+            console.log('[WS] Keep-alive timeout, reconnecting...');
             ws?.close();
             connect();
           }, 300000); // 5 minutes
           break;
 
         case 'data':
+          console.log('[WS] Data received:', message.payload);
           if (message.payload?.data) {
             onData(message.payload.data);
           }
           break;
 
         case 'error':
+          console.error('[WS] Subscription error:', message.payload);
           onError(new Error(message.payload?.errors?.[0]?.message || 'Subscription error'));
           break;
+
+        default:
+          console.log('[WS] Unknown message type:', message.type);
       }
     };
 
-    ws.onerror = () => {
+    ws.onerror = (e) => {
+      console.error('[WS] WebSocket error:', e);
       onError(new Error('WebSocket connection error'));
     };
 
-    ws.onclose = () => {
-      // Connection closed
+    ws.onclose = (e) => {
+      console.log('[WS] Connection closed:', e.code, e.reason);
       if (keepAliveTimeout) {
         clearTimeout(keepAliveTimeout);
       }
@@ -138,15 +150,20 @@ export function createSubscription(
 
   return {
     unsubscribe: () => {
+      console.log('[WS] Unsubscribing...');
       if (keepAliveTimeout) {
         clearTimeout(keepAliveTimeout);
       }
       if (ws && subscriptionId) {
-        ws.send(JSON.stringify({
-          id: subscriptionId,
-          type: 'stop',
-        }));
-        ws.close();
+        try {
+          ws.send(JSON.stringify({
+            id: subscriptionId,
+            type: 'stop',
+          }));
+          ws.close();
+        } catch (e) {
+          console.error('[WS] Error during unsubscribe:', e);
+        }
       }
     },
   };
