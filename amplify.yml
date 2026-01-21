@@ -4,8 +4,8 @@ frontend:
     preBuild:
       commands:
         - REPO_ROOT="$CODEBUILD_SRC_DIR/nonaga"
-        # Install dependencies for online frontend
-        - cd "$REPO_ROOT/online" && npm ci
+        # Clean install dependencies for online frontend (fix rollup native module issue)
+        - cd "$REPO_ROOT/online" && rm -rf node_modules package-lock.json && npm install
     build:
       commands:
         - REPO_ROOT="$CODEBUILD_SRC_DIR/nonaga"
