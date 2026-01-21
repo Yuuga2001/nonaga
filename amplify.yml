@@ -8,6 +8,8 @@ applications:
             - npm install
         build:
           commands:
+            - echo "APPSYNC_ENDPOINT is set = $(if [ -n \"$APPSYNC_ENDPOINT\" ]; then echo 'YES'; else echo 'NO'; fi)"
+            - echo "APPSYNC_API_KEY is set = $(if [ -n \"$APPSYNC_API_KEY\" ]; then echo 'YES'; else echo 'NO'; fi)"
             - npm run build
       artifacts:
         baseDirectory: .next
