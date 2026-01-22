@@ -132,7 +132,14 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
       if (isAnimatingRef.current) return;
 
       try {
-        const res = await fetch(`/api/game/${gameId}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const res = await fetch(`/api/game/${gameId}`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
         if (res.ok) {
           const data: GameSession = await res.json();
           if (data.updatedAt !== lastUpdateRef.current) {
@@ -146,7 +153,9 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
           }
         }
       } catch (err) {
-        console.error('Polling error:', err);
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Polling error:', err);
+        }
       }
     };
 
@@ -205,7 +214,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     return [];
   }, [selectedId, phase, tiles, pieces, winner, isAnimating, isMyTurn]);
 
-  // Send move to server
+  // Send move to server with retry
   const sendMove = useCallback(
     async (
       type: 'piece' | 'tile',
@@ -214,31 +223,57 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
       toQ: number,
       toR: number
     ) => {
-      try {
-        const res = await fetch(`/api/game/${gameId}/move`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            playerId,
-            type,
-            pieceId,
-            tileIndex,
-            toQ,
-            toR,
-          }),
-        });
+      const maxRetries = 3;
+      let lastError: Error | null = null;
 
-        if (res.ok) {
-          const data = await res.json();
-          setGame(data);
-          lastUpdateRef.current = data.updatedAt;
-          setSelectedId(null);
-        } else {
-          const errorData = await res.json().catch(() => ({}));
-          console.error('Move failed:', res.status, errorData);
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const res = await fetch(`/api/game/${gameId}/move`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              playerId,
+              type,
+              pieceId,
+              tileIndex,
+              toQ,
+              toR,
+            }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            setGame(data);
+            lastUpdateRef.current = data.updatedAt;
+            setSelectedId(null);
+            return; // Success
+          } else {
+            const errorData = await res.json().catch(() => ({}));
+            console.error('Move failed:', res.status, errorData);
+            return; // Server error, don't retry
+          }
+        } catch (err) {
+          lastError = err as Error;
+          console.error(`Move error (attempt ${attempt + 1}/${maxRetries}):`, err);
+          if (attempt < maxRetries - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+          }
         }
-      } catch (err) {
-        console.error('Move error:', err);
+      }
+
+      // All retries failed - refresh game state
+      if (lastError) {
+        console.error('All move retries failed, refreshing game state');
+        try {
+          const res = await fetch(`/api/game/${gameId}`);
+          if (res.ok) {
+            const data = await res.json();
+            setGame(data);
+            lastUpdateRef.current = data.updatedAt;
+          }
+        } catch (e) {
+          console.error('Failed to refresh game state:', e);
+        }
       }
     },
     [gameId, playerId]
