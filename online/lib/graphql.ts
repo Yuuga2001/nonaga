@@ -198,7 +198,7 @@ export async function moveTile(
   toR: number
 ): Promise<GameSession> {
   const data = await graphqlRequest<{ moveTile: GameSession }>(MOVE_TILE, {
-    input: { gameId, playerId, tileIndex, toQ, toR },
+    input: { gameId, playerId, fromIndex: tileIndex, toQ, toR },
   });
   return data.moveTile;
 }
