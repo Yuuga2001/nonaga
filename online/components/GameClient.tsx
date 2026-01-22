@@ -185,16 +185,21 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
   const viewBounds = useMemo(() => calculateViewBounds(tiles), [tiles]);
 
   const validDests = useMemo(() => {
+    console.log('validDests useMemo', { phase, selectedId, isMyTurn, winner, isAnimating });
     if (winner || isAnimating || !isMyTurn) return [];
 
     if (phase === 'move_token' && typeof selectedId === 'string') {
       const piece = pieces.find((p) => p.id === selectedId);
       if (!piece) return [];
-      return getSlideDestinations(piece, tiles, pieces);
+      const dests = getSlideDestinations(piece, tiles, pieces);
+      console.log('piece validDests:', dests);
+      return dests;
     }
 
     if (phase === 'move_tile' && typeof selectedId === 'number') {
-      return getValidTileDestinations(selectedId, tiles);
+      const dests = getValidTileDestinations(selectedId, tiles);
+      console.log('tile validDests:', dests);
+      return dests;
     }
 
     return [];
@@ -329,6 +334,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
   };
 
   const handleTileClick = (tile: Tile, index: number) => {
+    console.log('handleTileClick', { phase, isMyTurn, winner, isAnimating, selectedId, index });
     if (winner || isAnimating || !isMyTurn) return;
 
     if (phase === 'move_token' && typeof selectedId === 'string') {
@@ -356,6 +362,9 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
   };
 
   const handleDestinationClick = (dest: Tile) => {
+    console.log('handleDestinationClick', { phase, isMyTurn, winner, isAnimating, selectedId, dest });
+    if (winner || isAnimating || !isMyTurn) return;
+
     if (phase === 'move_tile' && typeof selectedId === 'number') {
       const tile = tiles[selectedId];
       setIsAnimating(true);
