@@ -295,10 +295,12 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         if (progress < 1) {
           animationFrameRef.current = requestAnimationFrame(animate);
         } else {
-          setAnimatingPiece(null);
+          // Keep animatingPiece at destination until server confirms the move
+          setAnimatingPiece({ id: pieceId, x: toPos.x, y: toPos.y });
           setIsAnimating(false);
           // Keep isAnimatingRef.current = true until sendMove completes
           sendMove('piece', pieceId, null, toQ, toR).finally(() => {
+            setAnimatingPiece(null);
             isAnimatingRef.current = false;
           });
         }
