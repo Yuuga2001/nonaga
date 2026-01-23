@@ -270,6 +270,8 @@ export async function handler(event: AppSyncEvent): Promise<GameSession> {
       });
     case 'abandonGame':
       return abandonGame(args.gameId as string, args.playerId as string);
+    case 'rematchGame':
+      return rematchGame(args.gameId as string, args.playerId as string);
     default:
       throw new Error(`Unknown field: ${fieldName}`);
   }
@@ -563,6 +565,64 @@ async function abandonGame(
         ':winner': winnerColor,
         ':phase': 'ended',
         ':updatedAt': now,
+      },
+      ReturnValues: 'ALL_NEW',
+    })
+  );
+
+  return result.Attributes as GameSession;
+}
+
+async function rematchGame(
+  gameId: string,
+  playerId: string
+): Promise<GameSession> {
+  const getResult = await docClient.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { gameId },
+    })
+  );
+
+  const game = getResult.Item as GameSession;
+  if (!game) {
+    throw new Error('Game not found');
+  }
+
+  if (game.status !== 'FINISHED') {
+    throw new Error('Game is not finished');
+  }
+
+  const playerColor = getPlayerColor(game, playerId);
+  if (!playerColor) {
+    throw new Error('Player not in this game');
+  }
+
+  // Swap host color for the rematch
+  const newHostColor: 'red' | 'blue' = game.hostColor === 'red' ? 'blue' : 'red';
+  const now = new Date().toISOString();
+  const ttl = Math.floor(Date.now() / 1000) + 86400;
+
+  const result = await docClient.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { gameId },
+      UpdateExpression:
+        'SET #status = :status, hostColor = :hostColor, tiles = :tiles, pieces = :pieces, #turn = :turn, phase = :phase, updatedAt = :updatedAt, #ttl = :ttl REMOVE winner, victoryLine',
+      ExpressionAttributeNames: {
+        '#status': 'status',
+        '#turn': 'turn',
+        '#ttl': 'ttl',
+      },
+      ExpressionAttributeValues: {
+        ':status': 'PLAYING',
+        ':hostColor': newHostColor,
+        ':tiles': [...INITIAL_TILES],
+        ':pieces': [...INITIAL_PIECES],
+        ':turn': 'red',
+        ':phase': 'move_token',
+        ':updatedAt': now,
+        ':ttl': ttl,
       },
       ReturnValues: 'ALL_NEW',
     })

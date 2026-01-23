@@ -122,8 +122,9 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
   }, [gameId, playerId, strings.gameNotFound]);
 
   // Polling for game updates (1 second interval)
+  // Continue polling during FINISHED to detect rematch/end from opponent
   useEffect(() => {
-    if (!game || game.status === 'FINISHED' || game.status === 'ABANDONED') {
+    if (!game || game.status === 'ABANDONED') {
       return;
     }
 
@@ -144,6 +145,11 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
           const data: GameSession = await res.json();
           if (data.updatedAt !== lastUpdateRef.current) {
             lastUpdateRef.current = data.updatedAt;
+            // Opponent ended the game - redirect to lobby
+            if (data.status === 'ABANDONED') {
+              router.push('/');
+              return;
+            }
             // Only reset selection when turn changes (opponent made a move)
             const turnChanged = game?.turn !== data.turn;
             if (turnChanged) {
@@ -165,7 +171,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         clearInterval(pollingRef.current);
       }
     };
-  }, [game, gameId]);
+  }, [game, gameId, router]);
 
   // Computed values
   const myColor = useMemo(() => {
@@ -423,7 +429,33 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     router.push('/');
   };
 
-  const handlePlayAgain = () => {
+  const handlePlayAgain = async () => {
+    try {
+      const res = await fetch(`/api/game/${gameId}/rematch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        lastUpdateRef.current = data.updatedAt;
+        setGame(data);
+      }
+    } catch (err) {
+      console.error('Rematch error:', err);
+    }
+  };
+
+  const handleEndGame = async () => {
+    try {
+      await fetch(`/api/game/${gameId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId }),
+      });
+    } catch (err) {
+      console.error('End game error:', err);
+    }
     router.push('/');
   };
 
@@ -493,7 +525,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         <div className="result-container">
           <div className="result-card">
             <h2>{strings.abandoned}</h2>
-            <button onClick={handlePlayAgain} className="play-again-button">
+            <button onClick={() => router.push('/')} className="play-again-button">
               {strings.backToLobby}
             </button>
           </div>
@@ -520,9 +552,14 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
                 {winner === myColor ? strings.youWin : strings.opponentWin}
               </span>
             </div>
-            <button onClick={handlePlayAgain} className="reset-button">
-              {strings.playAgain}
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+              <button onClick={handlePlayAgain} className="reset-button" style={{ marginTop: 0 }}>
+                {strings.playAgain}
+              </button>
+              <button onClick={handleEndGame} className="reset-button" style={{ marginTop: 0, background: '#64748b' }}>
+                {strings.endGame}
+              </button>
+            </div>
           </div>
         ) : (
           <div

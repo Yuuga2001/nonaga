@@ -145,6 +145,26 @@ const ABANDON_GAME = `
   }
 `;
 
+const REMATCH_GAME = `
+  mutation RematchGame($gameId: ID!, $playerId: String!) {
+    rematchGame(gameId: $gameId, playerId: $playerId) {
+      gameId
+      status
+      hostPlayerId
+      guestPlayerId
+      hostColor
+      tiles { q r }
+      pieces { id player q r }
+      turn
+      phase
+      winner
+      victoryLine
+      lastMoveAt
+      updatedAt
+    }
+  }
+`;
+
 // API functions
 export async function getGame(gameId: string): Promise<GameSession | null> {
   try {
@@ -212,4 +232,15 @@ export async function abandonGame(
     { gameId, playerId }
   );
   return data.abandonGame;
+}
+
+export async function rematchGame(
+  gameId: string,
+  playerId: string
+): Promise<GameSession> {
+  const data = await graphqlRequest<{ rematchGame: GameSession }>(
+    REMATCH_GAME,
+    { gameId, playerId }
+  );
+  return data.rematchGame;
 }

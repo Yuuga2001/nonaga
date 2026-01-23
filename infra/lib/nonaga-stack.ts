@@ -122,6 +122,12 @@ export class NonagaStack extends cdk.Stack {
       fieldName: 'abandonGame',
     });
 
+    // Mutation: rematchGame (via Lambda)
+    lambdaDataSource.createResolver('RematchGameResolver', {
+      typeName: 'Mutation',
+      fieldName: 'rematchGame',
+    });
+
     // Outputs
     this.graphqlUrl = new cdk.CfnOutput(this, 'GraphQLApiUrl', {
       value: api.graphqlUrl,

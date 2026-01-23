@@ -73,9 +73,10 @@ type Mutation {
   movePiece(input: MovePieceInput!): GameSession!
   moveTile(input: MoveTileInput!): GameSession!
   abandonGame(gameId: ID!, playerId: String!): GameSession!
+  rematchGame(gameId: ID!, playerId: String!): GameSession!
 }
 
 type Subscription {
   onGameUpdated(gameId: ID!): GameSession
-    @aws_subscribe(mutations: ["joinGame", "movePiece", "moveTile", "abandonGame"])
+    @aws_subscribe(mutations: ["joinGame", "movePiece", "moveTile", "abandonGame", "rematchGame"])
 }
