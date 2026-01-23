@@ -596,7 +596,6 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
             <span style={{ fontSize: 16 }}>&#127942;</span>
             <div>
               <p>{strings.goal}</p>
-              <p className="goal-hint">{strings.goalHint}</p>
             </div>
           </div>
           <div className="steps-grid">
