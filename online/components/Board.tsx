@@ -141,8 +141,8 @@ export default function Board({
           {/* Pieces */}
           {pieces.map((p) => {
             const isV = victoryLine.includes(coordsKey(p.q, p.r));
-            const pos =
-              animatingPiece && animatingPiece.id === p.id
+            const isBeingAnimated = animatingPiece && animatingPiece.id === p.id;
+            const pos = isBeingAnimated
                 ? { x: animatingPiece.x, y: animatingPiece.y }
                 : hexToPixel(p.q, p.r);
             const isMyPiece = p.player === myColor;
@@ -159,7 +159,10 @@ export default function Board({
               <g
                 key={p.id}
                 transform={`translate(${pos.x}, ${pos.y})`}
-                style={{ cursor: canSelect ? 'pointer' : 'default' }}
+                style={{
+                  cursor: canSelect ? 'pointer' : 'default',
+                  transition: isBeingAnimated ? 'none' : 'transform 0.8s cubic-bezier(0.33, 1, 0.68, 1)',
+                }}
                 onClick={() => onPieceClick(p)}
               >
                 <circle r="30" fill="transparent" />
