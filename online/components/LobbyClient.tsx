@@ -77,7 +77,7 @@ export default function LobbyClient() {
             <span>or</span>
           </div>
 
-          <a href="/" className="local-game-link">
+          <a href="/local" className="local-game-link">
             ← {strings.localGame}
           </a>
         </div>
