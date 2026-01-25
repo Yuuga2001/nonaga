@@ -40,7 +40,7 @@ export default function AboutPage() {
       minHeight: '100vh',
     }}>
       <nav style={{ display: 'flex', gap: '1rem', fontWeight: 600, fontSize: '0.9rem' }}>
-        <Link href="/" style={{ color: '#4f46e5', textDecoration: 'none' }}>ゲームに戻る</Link>
+        <Link href="/local" style={{ color: '#4f46e5', textDecoration: 'none' }}>ゲームに戻る</Link>
         <Link href="/en/about" style={{ color: '#4f46e5', textDecoration: 'none' }}>English</Link>
       </nav>
 

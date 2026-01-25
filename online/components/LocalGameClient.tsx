@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const HEX_SIZE = 38;
 const DIRECTIONS = [{q:1,r:0},{q:1,r:-1},{q:0,r:-1},{q:-1,r:0},{q:-1,r:1},{q:0,r:1}];
@@ -175,12 +175,18 @@ const ModeSelector = ({ strings, currentMode, onSelect, onClose }: {
 
 export default function LocalGameClient() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [lang, setLang] = useState<'ja' | 'en'>('ja');
     const strings = I18N[lang];
 
     useEffect(() => {
-        setLang(getLang() as 'ja' | 'en');
-    }, []);
+        const langParam = searchParams.get('lang');
+        if (langParam === 'en') {
+            setLang('en');
+        } else {
+            setLang(getLang() as 'ja' | 'en');
+        }
+    }, [searchParams]);
 
     const [tiles, setTiles] = useState<Tile[]>(INITIAL_TILES);
     const [pieces, setPieces] = useState<Piece[]>(INITIAL_PIECES);
