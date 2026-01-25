@@ -4,16 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-NONAGA is a strategic hexagonal board game with two main components:
-- **Local game**: Single-file HTML application (`index.html`) using vanilla React via CDN — PvP and AI modes
+NONAGA is a strategic hexagonal board game with three game modes:
+- **Local game (vanilla)**: Single-file HTML application (`index.html`) using vanilla React via CDN — PvP and AI modes
+- **Local game (Next.js)**: `/online/app/local/` route with `LocalGameClient.tsx` — PvP and AI modes within Next.js app
 - **Online game**: Next.js 15 + React 19 application (`/online/`) with AWS AppSync for real-time multiplayer
+
+Play URLs:
+- Local: https://nonaga.riverapp.jp/
+- Online lobby: https://nonaga.riverapp.jp/online/
+- Local (Next.js): https://nonaga.riverapp.jp/online/local
 
 ## Architecture
 
-### Local Game (`index.html`, `app.jsx`, `app.css`)
+### Local Game (Vanilla: `index.html`, `app.jsx`, `app.css`)
 
 Single-file HTML application transpiled via Babel CDN. No build tools required.
-- Game state managed via React hooks
 - AI opponent uses position evaluation scoring
 - SVG-based board rendering
 
@@ -26,35 +31,49 @@ online/
 ├── app/
 │   ├── layout.tsx, page.tsx       # Root layout + Lobby page
 │   ├── globals.css                # All styles + animations
-│   ├── game/[gameId]/page.tsx     # Game page (dynamic route)
-│   └── api/                       # Next.js Route Handlers
-│       ├── health/route.ts
-│       └── game/
-│           ├── route.ts                    # POST: create game
-│           └── [gameId]/
-│               ├── route.ts                # GET/DELETE: game state
-│               ├── join/route.ts           # POST: join game
-│               └── move/route.ts           # POST: move piece/tile
+│   ├── local/page.tsx             # Local game (AI/PvP) route
+│   ├── about/page.tsx             # About page (Japanese)
+│   ├── en/about/page.tsx          # About page (English)
+│   ├── game/[gameId]/page.tsx     # Online game page
+│   └── api/game/
+│       ├── route.ts                       # POST: create game
+│       └── [gameId]/
+│           ├── route.ts                   # GET/DELETE: game state
+│           ├── join/route.ts              # POST: join game
+│           ├── move/route.ts              # POST: move piece/tile
+│           └── rematch/route.ts           # POST: request rematch
 ├── components/
 │   ├── LobbyClient.tsx            # Game creation UI
-│   ├── GameClient.tsx             # Main game logic (615 lines)
-│   └── Board.tsx                  # SVG board rendering
+│   ├── GameClient.tsx             # Online game logic (~700 lines)
+│   ├── LocalGameClient.tsx        # Local game (AI/PvP) (~850 lines)
+│   └── Board.tsx                  # SVG board rendering (online only)
 ├── lib/
 │   ├── gameLogic.ts               # Shared game logic, types, i18n
 │   └── graphql.ts                 # Server-side AppSync client
-└── next.config.js                 # output: 'standalone'
+└── public/
+    └── about/, en/about/          # Static HTML fallbacks (unused)
 ```
 
-**Real-time sync**: Client-side 1-second polling (not WebSocket subscriptions) via `GET /api/game/[gameId]`
+**Real-time sync**: Client-side 1-second polling via `GET /api/game/[gameId]`
 
-**Server-side GraphQL**: API routes call AppSync via `lib/graphql.ts` using server-side env vars (`APPSYNC_ENDPOINT`, `APPSYNC_API_KEY`)
+**Server-side GraphQL**: API routes call AppSync via `lib/graphql.ts` using server-side env vars
+
+### LocalGameClient vs GameClient
+
+| Feature | LocalGameClient.tsx | GameClient.tsx |
+|---------|---------------------|----------------|
+| Modes | AI + PvP | Online multiplayer |
+| Board rendering | Inline SVG | Uses `Board.tsx` |
+| State sync | Local React state | Polling + API |
+| AI logic | Inline (position evaluation) | N/A |
+| Language | `?lang=en` query param | Browser `document.documentElement.lang` |
 
 ### Infrastructure (`/infra/`)
 
 AWS CDK (TypeScript) deploying:
 - **AppSync**: GraphQL API with Lambda + DynamoDB resolvers
-- **DynamoDB**: Game sessions with TTL (24h auto-deletion), GSI on status+createdAt
-- **Lambda**: `gameHandler.ts` — Node.js 20, validates moves, checks victory, ensures board connectivity
+- **DynamoDB**: Game sessions with TTL (24h), GSI on status+createdAt
+- **Lambda**: `gameHandler.ts` — validates moves, checks victory, ensures board connectivity
 
 Stack names: `NonagaStack-Dev` / `NonagaStack-Prod`
 
@@ -82,7 +101,7 @@ In `online/lib/gameLogic.ts` (frontend) and `infra/lambda/gameHandler.ts` (backe
 
 ## Development Commands
 
-### Local Game
+### Local Game (Vanilla)
 ```bash
 npx serve .              # Serve at localhost:3000
 ```
@@ -133,6 +152,8 @@ Environment variables (`APPSYNC_ENDPOINT`, `APPSYNC_API_KEY`) must be set in Amp
 2. **Animation blocking**: Never mutate game state during `isAnimating === true`
 3. **Board connectivity**: Always validate tile moves with `isBoardConnected()` before allowing
 4. **Duplicate game logic**: Move validation exists in both `infra/lambda/gameHandler.ts` (authoritative) and `online/lib/gameLogic.ts` (UI feedback) — keep in sync
-5. **Polling vs subscriptions**: Client uses polling; AppSync subscriptions exist in schema but are not used by the Next.js frontend
+5. **Polling vs subscriptions**: Client uses polling; AppSync subscriptions exist in schema but are not used
 6. **Player ID**: UUID stored in localStorage; clearing it creates a new player identity
 7. **Move retry**: `GameClient.tsx` retries failed moves up to 3 times with 500ms delay
+8. **useSearchParams requires Suspense**: `LocalGameClient.tsx` uses `useSearchParams()` which requires wrapping in `<Suspense>` in the page component
+9. **LocalGameClient renders its own SVG**: Unlike GameClient which uses Board.tsx, LocalGameClient renders the board inline (faithful port of app.jsx)
