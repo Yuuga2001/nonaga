@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const HEX_SIZE = 38;
@@ -852,18 +853,13 @@ export default function LocalGameClient() {
                                     <p className="goal-hint" style={{ margin: 0 }}>{strings.goalHint}</p>
                                 </div>
                             </a>
-                            <button
-                                onClick={() => {
-                                    if (lang === 'en') {
-                                        router.push('/local');
-                                    } else {
-                                        router.push('/local?lang=en');
-                                    }
-                                }}
-                                className="bg-transparent border-none cursor-pointer text-sm text-slate-500 hover:underline whitespace-nowrap p-2"
+                            <Link
+                                href={lang === 'en' ? '/local' : '/local?lang=en'}
+                                className="goal-hint"
+                                style={{ cursor: 'pointer', textDecoration: 'underline', alignSelf: 'center' }}
                             >
                                 {lang === 'en' ? '日本語に変更' : 'Change to English'}
-                            </button>
+                            </Link>
                         </div>
                     </div>
                     <div className="steps-grid">
