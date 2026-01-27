@@ -370,7 +370,8 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         if (progress < 1) {
           animationFrameRef.current = requestAnimationFrame(animate);
         } else {
-          setAnimatingTile(null);
+          // Keep animatingTile at destination until the caller resolves state
+          setAnimatingTile({ index: tileIndex, x: toPos.x, y: toPos.y });
           setIsAnimating(false);
           onArrive();
         }
@@ -405,6 +406,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
       animateTileMoveBase(tileIndex, fromQ, fromR, toQ, toR, () => {
         // Keep isAnimatingRef.current = true until sendMove completes
         sendMove('tile', null, tileIndex, toQ, toR).finally(() => {
+          setAnimatingTile(null);
           isAnimatingRef.current = false;
         });
       });
@@ -440,6 +442,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         move.toR,
         () => {
           setGame(nextGame);
+          setAnimatingTile(null);
           isAnimatingRef.current = false;
         }
       );
