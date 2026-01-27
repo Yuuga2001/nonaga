@@ -255,7 +255,7 @@ export function calculateViewBounds(tiles: Tile[]): {
 // i18n strings
 export const I18N = {
   ja: {
-    onlineTitle: 'オンライン対戦',
+    onlineTitle: 'オンライン対戦モード',
     createGame: 'ゲームを作成',
     creating: '作成中...',
     waitingForOpponent: '対戦相手を待っています...',
@@ -293,7 +293,7 @@ export const I18N = {
     abandoned: '対戦相手が退出しました',
   },
   en: {
-    onlineTitle: 'Online Match',
+    onlineTitle: 'Online Mode',
     createGame: 'Create Game',
     creating: 'Creating...',
     waitingForOpponent: 'Waiting for opponent...',

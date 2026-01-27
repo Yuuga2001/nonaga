@@ -34,7 +34,7 @@ const I18N = {
         redWin: '赤の勝ち!',
         blueWin: '青の勝ち!',
         playAgain: 'もう一度あそぶ',
-        pvp: 'ふたりで対戦',
+        pvp: 'ふたりで対戦モード',
         aiMode: 'AI対戦モード',
         onlineMode: 'オンライン対戦',
         selectMode: 'モード選択',
@@ -63,9 +63,9 @@ const I18N = {
         redWin: 'Red wins!',
         blueWin: 'Blue wins!',
         playAgain: 'Play again',
-        pvp: '2-Player',
-        aiMode: 'Play vs AI',
-        onlineMode: 'Online Battle',
+        pvp: '2-Player Mode',
+        aiMode: 'AI Mode',
+        onlineMode: 'Online Mode',
         selectMode: 'Select Mode',
         changeMode: 'Change Mode',
         thinking: '🤖 AI thinking...',
@@ -714,7 +714,17 @@ export default function LocalGameClient() {
             <header className="header" role="banner">
                 <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
                     <h1 className="game-title">Nonaga</h1>
-                    <div style={{fontSize: '0.7rem', fontWeight: 600, color: '#64748b'}}>
+                    <div style={{
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        color: 'white',
+                        background: gameMode === 'ai' ? '#f59e0b' : '#6366f1',
+                        padding: '0.35rem 0.75rem',
+                        borderRadius: '9999px',
+                        boxShadow: gameMode === 'ai' ? '0 2px 8px rgba(245, 158, 11, 0.3)' : '0 2px 8px rgba(99, 102, 241, 0.3)',
+                        letterSpacing: '0.02em',
+                        whiteSpace: 'nowrap'
+                    }}>
                         {gameMode === 'ai' ? strings.aiMode : strings.pvp}
                     </div>
                 </div>

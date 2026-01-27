@@ -543,7 +543,17 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
       <header className="header">
         <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
           <h1 className="game-title">Nonaga</h1>
-          <div style={{fontSize: '0.7rem', fontWeight: 600, color: '#64748b'}}>
+          <div style={{
+            fontSize: '0.65rem',
+            fontWeight: 700,
+            color: 'white',
+            background: '#10b981',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '9999px',
+            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+            letterSpacing: '0.02em',
+            whiteSpace: 'nowrap'
+          }}>
             {strings.onlineTitle}
           </div>
         </div>
