@@ -782,7 +782,7 @@ export default function LocalGameClient() {
                 ) : (
                     <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
                         <div style={{display:'flex', alignItems:'center'}}>
-                            <div className={`turn-indicator ${(isAnimating || aiThinking) ? 'disabled' : ''}`} onClick={(isAnimating || aiThinking) ? undefined : resetGame}>
+                            <div className={`turn-indicator ${(isAnimating || aiThinking) ? 'disabled' : ''}`}>
                                 <div className={`player-indicator ${turn === 'red' ? 'active' : ''}`}>
                                     <div className="player-dot red" />
                                     {gameMode === 'ai' ? (aiPlayer === 'red' ? strings.ai : strings.you) : strings.playerRed}
