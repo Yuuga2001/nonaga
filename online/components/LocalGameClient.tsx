@@ -702,7 +702,7 @@ export default function LocalGameClient() {
     }, [selectedId, phase, tiles, pieces, tileMap, pieceMap, winner, isAnimating]);
 
     return (
-        <div id="main-content" className={`game-container ${winner === 'red' ? 'bg-rose' : winner === 'blue' ? 'bg-indigo' : 'bg-slate'}`}>
+        <div id="main-content" className={`game-container game-view ${winner === 'red' ? 'bg-rose' : winner === 'blue' ? 'bg-indigo' : 'bg-slate'}`}>
             {winner && <Confetti winner={winner} />}
             {showModeSelector && (
                 <ModeSelector

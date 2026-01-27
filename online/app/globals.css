@@ -21,6 +21,14 @@ body {
     position: relative;
 }
 
+.game-view {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    height: 100dvh;
+    overflow: hidden;
+}
+
 .game-container.bg-rose { background-color: #fff1f2; }
 .game-container.bg-indigo { background-color: #eef2ff; }
 .game-container.bg-slate { background-color: #f8fafc; }
@@ -54,17 +62,16 @@ body {
 .player-dot.blue { background-color: #6366f1; }
 
 .board-container {
-    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1rem 0.5rem 5rem;
+    padding: 0.5rem;
     touch-action: none;
     min-height: 0;
-    overflow: visible;
+    overflow: hidden;
 }
 
-.board-svg { width: 100%; height: auto; max-height: 70vh; overflow: visible; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
+.board-svg { width: 100%; height: 100%; max-height: 100%; max-width: 100%; overflow: visible; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
 
 .tile { transition: all 0.8s ease; fill: white; stroke: #e2e8f0; stroke-width: 1px; }
 .tile.selected-origin { fill: #fee2e2; stroke: #f43f5e; stroke-width: 2px; }

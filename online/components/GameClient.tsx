@@ -717,7 +717,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     winner === 'red' ? 'bg-rose' : winner === 'blue' ? 'bg-indigo' : 'bg-slate';
 
   return (
-    <div className={`game-container ${bgClass}`}>
+    <div className={`game-container game-view ${bgClass}`}>
       {showEndConfirm && (
         <div className="mode-selector-overlay" onClick={() => setShowEndConfirm(false)}>
           <div className="mode-selector-modal" onClick={(e) => e.stopPropagation()}>
