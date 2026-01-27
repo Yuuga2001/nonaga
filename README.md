@@ -2,7 +2,7 @@
 
 盤面そのものを動かせる、六角形の新感覚ストラテジーボードゲーム。3つのコマを隣接させたら勝利です。ブラウザだけで、1人でもAI対戦でもすぐに遊べます。
 
-- プレイ: https://nonaga.riverapp.jp/
+- ローカル対戦（AI / 2人）: https://nonaga.riverapp.jp/online/local
 - オンライン対戦: https://nonaga.riverapp.jp/online/
 
 ![NONAGA gameplay screenshot](public/screenshot.png)
@@ -13,35 +13,49 @@
 
 - 盤面タイルを動かす独自ルールで、定番ボードゲームにない戦術性
 - 6方向スライド移動で読み合いが生まれるテンポの良い対戦
-- PvP / AI対戦モードの切り替え
+- AI対戦モード / 2人対戦モードの切り替え
 - **オンライン対戦対応（URLを共有するだけで友達と対戦可能）**
+- **リマッチ機能（オンライン対戦で連続対戦可能）**
 - レスポンシブ対応（PC / タブレット / スマホ）
+- 日本語 / 英語対応
 
 ---
 
 ## 技術スタック
 
-### ローカル/AI対戦（既存）
+### オンライン版（メイン）
+- Next.js 15 + React 19 + TypeScript
+- AWS AppSync（GraphQL API）
+- AWS DynamoDB（ゲームセッション管理）
+- AWS CDK（Infrastructure as Code）
+
+### ローカル版（レガシー）
 - HTML / CSS / JavaScript
 - React 18（CDN）
 - Babel Standalone（CDN）
 - SVGによる盤面描画
 
-### オンライン対戦（新規）
-- React 18 + TypeScript + Vite
-- AWS AppSync（GraphQL API + リアルタイムサブスクリプション）
-- AWS DynamoDB（ゲームセッション管理）
-- AWS CDK（Infrastructure as Code）
-
 ### インフラ
-- AWS Amplify（静的ホスティング）
+- AWS Amplify（ホスティング）
 - GitHub Actions（CI/CD）
 
 ---
 
 ## セットアップ
 
-### ローカル対戦/AI対戦
+### オンライン版（開発）
+
+```bash
+cd online
+npm install
+cp .env.example .env
+# .envにAppSyncのエンドポイントとAPIキーを設定
+npm run dev
+```
+
+ブラウザで http://localhost:3000 にアクセスしてください。
+
+### ローカル版（レガシー）
 
 ```bash
 # 任意のHTTPサーバーで起動
@@ -52,42 +66,38 @@ npx serve .
 
 ブラウザで http://localhost:8000 にアクセスしてください。
 
-### オンライン対戦（開発）
-
-```bash
-# フロントエンド
-cd online
-npm install
-cp .env.example .env
-# .envにAppSyncのエンドポイントとAPIキーを設定
-npm run dev
-```
-
-ブラウザで http://localhost:5173/online にアクセスしてください。
-
 ---
 
 ## ファイル構成
 
 ```
 nonaga/
-├── index.html           # ローカル/AI対戦（単一ファイル）
-├── app.jsx              # ゲームロジック
-├── app.css              # スタイル
-├── online/              # オンライン対戦フロントエンド
-│   ├── src/
-│   │   ├── components/  # Reactコンポーネント
-│   │   ├── hooks/       # カスタムフック
-│   │   ├── graphql/     # GraphQL操作
-│   │   └── lib/         # ゲームロジック
-│   └── package.json
+├── index.html           # ローカル版（レガシー、単一ファイル）
+├── app.jsx              # ローカル版ゲームロジック
+├── app.css              # ローカル版スタイル
+├── online/              # オンライン版（Next.js）
+│   ├── app/
+│   │   ├── layout.tsx, page.tsx    # ルートレイアウト + ロビー
+│   │   ├── globals.css             # 全スタイル
+│   │   ├── local/page.tsx          # ローカル対戦（AI/2人）
+│   │   ├── about/page.tsx          # アバウトページ（日本語）
+│   │   ├── en/about/page.tsx       # アバウトページ（英語）
+│   │   ├── game/[gameId]/page.tsx  # オンラインゲーム
+│   │   └── api/game/               # APIルート
+│   ├── components/
+│   │   ├── LobbyClient.tsx         # ロビーUI
+│   │   ├── GameClient.tsx          # オンラインゲームロジック
+│   │   ├── LocalGameClient.tsx     # ローカルゲームロジック
+│   │   └── Board.tsx               # SVGボード描画
+│   └── lib/
+│       ├── gameLogic.ts            # 共通ゲームロジック
+│       └── graphql.ts              # AppSyncクライアント
 ├── infra/               # AWS CDKインフラ
 │   ├── lib/             # CDKスタック定義
 │   ├── graphql/         # AppSyncスキーマ
 │   └── lambda/          # Lambda関数
 ├── .github/workflows/   # GitHub Actions
-├── amplify.yaml         # Amplifyデプロイ設定
-└── public/              # 画像アセット
+└── amplify.yml          # Amplifyデプロイ設定
 ```
 
 ---
@@ -111,8 +121,10 @@ npx cdk deploy NonagaStack-Dev
 
 以下のSecretsをリポジトリに設定:
 - `AWS_ROLE_ARN`: OIDC認証用IAMロールARN
-- `VITE_APPSYNC_ENDPOINT`: AppSync GraphQLエンドポイント（フォールバック用）
-- `VITE_APPSYNC_API_KEY`: AppSync APIキー（フォールバック用）
+
+環境変数（Amplify Consoleで設定）:
+- `APPSYNC_ENDPOINT`: AppSync GraphQLエンドポイント
+- `APPSYNC_API_KEY`: AppSync APIキー
 
 ---
 

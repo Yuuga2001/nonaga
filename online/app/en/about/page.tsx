@@ -50,27 +50,39 @@ export default function AboutPageEN() {
         creating a constantly shifting battlefield that rewards foresight and positioning.
       </p>
 
-      <h2 style={{ fontSize: '1.4rem', marginTop: '2rem' }}>Key features</h2>
+      <h2 style={{ fontSize: '1.4rem', marginTop: '2rem' }}>Key Features</h2>
       <ul style={{ paddingLeft: '1.2rem' }}>
         <li style={{ marginBottom: '0.4rem' }}>Play instantly in your browser for free</li>
         <li style={{ marginBottom: '0.4rem' }}>AI opponent mode for solo play</li>
-        <li style={{ marginBottom: '0.4rem' }}>2-player local battles with friends</li>
+        <li style={{ marginBottom: '0.4rem' }}>2-player local mode for playing with friends</li>
+        <li style={{ marginBottom: '0.4rem' }}>Online multiplayer - share a URL to play with anyone</li>
         <li style={{ marginBottom: '0.4rem' }}>Responsive on mobile, tablet, and desktop</li>
         <li style={{ marginBottom: '0.4rem' }}>Simple rules with deep strategic depth</li>
       </ul>
 
-      <h2 style={{ fontSize: '1.4rem', marginTop: '2rem' }}>How to play</h2>
+      <h2 style={{ fontSize: '1.4rem', marginTop: '2rem' }}>How to Play</h2>
       <p>Each player controls three pieces. You win by connecting all three. Each turn has two phases:</p>
       <ol style={{ paddingLeft: '1.2rem' }}>
         <li style={{ marginBottom: '0.4rem' }}>Slide a piece in one of six directions until it hits an obstacle</li>
-        <li style={{ marginBottom: '0.4rem' }}>Move an empty tile to a valid highlighted position</li>
+        <li style={{ marginBottom: '0.4rem' }}>Move an empty tile to a new position (must touch at least 2 existing tiles)</li>
       </ol>
 
-      <h2 style={{ fontSize: '1.4rem', marginTop: '2rem' }}>Win condition</h2>
-      <p>Connect your three pieces in a line, triangle, or V-shape.</p>
+      <h2 style={{ fontSize: '1.4rem', marginTop: '2rem' }}>Win Condition</h2>
+      <p>Connect your three pieces in any adjacent formation - a line, triangle, or V-shape.</p>
 
-      <h2 style={{ fontSize: '1.4rem', marginTop: '2rem' }}>Strategy tips</h2>
-      <p>Reposition tiles to control the board flow. Try to separate your opponent while bringing your own pieces closer together.</p>
+      <h2 style={{ fontSize: '1.4rem', marginTop: '2rem' }}>Strategy Tips</h2>
+      <ul style={{ paddingLeft: '1.2rem' }}>
+        <li style={{ marginBottom: '0.4rem' }}>Reposition tiles to control the board flow</li>
+        <li style={{ marginBottom: '0.4rem' }}>Try to separate your opponent&apos;s pieces to block their victory</li>
+        <li style={{ marginBottom: '0.4rem' }}>Bring your pieces closer together while anticipating your opponent&apos;s moves</li>
+      </ul>
+
+      <h2 style={{ fontSize: '1.4rem', marginTop: '2rem' }}>Game Modes</h2>
+      <ul style={{ paddingLeft: '1.2rem' }}>
+        <li style={{ marginBottom: '0.4rem' }}><strong>vs AI</strong>: Play against the computer. First/second player is randomly determined</li>
+        <li style={{ marginBottom: '0.4rem' }}><strong>2 Players</strong>: Take turns on the same device</li>
+        <li style={{ marginBottom: '0.4rem' }}><strong>Online Match</strong>: Share a URL to play with remote opponents. Rematch feature included</li>
+      </ul>
     </main>
   );
 }

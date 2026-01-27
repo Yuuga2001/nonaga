@@ -55,6 +55,7 @@ export default function AboutPage() {
         <li style={{ marginBottom: '0.4rem' }}>ブラウザで今すぐ無料プレイ可能</li>
         <li style={{ marginBottom: '0.4rem' }}>AI対戦モード搭載 - 一人でも楽しめる</li>
         <li style={{ marginBottom: '0.4rem' }}>2人対戦モード - 友達や家族と対戦</li>
+        <li style={{ marginBottom: '0.4rem' }}>オンライン対戦 - URLを共有するだけで遠くの相手と対戦</li>
         <li style={{ marginBottom: '0.4rem' }}>スマートフォン・タブレット・PCに対応</li>
         <li style={{ marginBottom: '0.4rem' }}>シンプルなルールで奥深い戦術性</li>
       </ul>
@@ -62,15 +63,26 @@ export default function AboutPage() {
       <h2 style={{ fontSize: '1.4rem', marginTop: '2rem' }}>遊び方</h2>
       <p>各プレイヤーは3つのコマを持ち、それらを連結させることで勝利します。1ターンは2つのフェーズから構成されます：</p>
       <ol style={{ paddingLeft: '1.2rem' }}>
-        <li style={{ marginBottom: '0.4rem' }}>コマを選んで端まで滑らせる</li>
-        <li style={{ marginBottom: '0.4rem' }}>空いているタイルを別の位置へ移動する</li>
+        <li style={{ marginBottom: '0.4rem' }}>コマを選んで端まで滑らせる（6方向のいずれかに、障害物にぶつかるまで移動）</li>
+        <li style={{ marginBottom: '0.4rem' }}>空いているタイルを別の位置へ移動する（移動先は既存タイルに2つ以上接している必要あり）</li>
       </ol>
 
       <h2 style={{ fontSize: '1.4rem', marginTop: '2rem' }}>勝利条件</h2>
       <p>自分の3つのコマすべてが隣接した状態（線状、三角形、V字など）を作ると勝利です。</p>
 
       <h2 style={{ fontSize: '1.4rem', marginTop: '2rem' }}>戦略のポイント</h2>
-      <p>タイル配置を変えることで盤面全体をコントロールできます。相手のコマを分断したり、自分のコマを近づけたりする戦略的な判断が重要です。</p>
+      <ul style={{ paddingLeft: '1.2rem' }}>
+        <li style={{ marginBottom: '0.4rem' }}>タイル配置を変えることで盤面全体をコントロールできます</li>
+        <li style={{ marginBottom: '0.4rem' }}>相手のコマを分断して勝利を阻止しましょう</li>
+        <li style={{ marginBottom: '0.4rem' }}>自分のコマを近づけつつ、相手の動きを読むことが重要です</li>
+      </ul>
+
+      <h2 style={{ fontSize: '1.4rem', marginTop: '2rem' }}>ゲームモード</h2>
+      <ul style={{ paddingLeft: '1.2rem' }}>
+        <li style={{ marginBottom: '0.4rem' }}><strong>AI対戦</strong>: コンピュータと対戦。先攻・後攻はランダムで決定</li>
+        <li style={{ marginBottom: '0.4rem' }}><strong>ふたりで対戦</strong>: 同じ端末で交互にプレイ</li>
+        <li style={{ marginBottom: '0.4rem' }}><strong>オンライン対戦</strong>: URLを共有して離れた相手と対戦。リマッチ機能付き</li>
+      </ul>
     </main>
   );
 }
