@@ -196,76 +196,6 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     fetchAndJoin();
   }, [gameId, playerId, strings.gameNotFound]);
 
-  // Polling for game updates (1 second interval)
-  // Continue polling during FINISHED to detect rematch/end from opponent
-  useEffect(() => {
-    if (!game || game.status === 'ABANDONED') {
-      return;
-    }
-
-    const poll = async () => {
-      // Skip polling during animation to prevent state conflicts
-      if (isAnimatingRef.current) return;
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        const res = await fetch(`/api/game/${gameId}`, {
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-
-        if (res.ok) {
-          const data: GameSession = await res.json();
-          if (data.updatedAt !== lastUpdateRef.current) {
-            lastUpdateRef.current = data.updatedAt;
-            // Opponent ended the game - redirect to lobby
-            if (data.status === 'ABANDONED') {
-              router.push('/online');
-              return;
-            }
-            if (!game) {
-              setGame(data);
-              return;
-            }
-            // Only reset selection when turn changes (opponent made a move)
-            const turnChanged = game.turn !== data.turn;
-            if (turnChanged) {
-              setSelectedId(null);
-            }
-            const pieceMove = detectPieceMove(game.pieces, data.pieces);
-            const tileMove = pieceMove ? null : detectTileMove(game.tiles, data.tiles);
-            if (pieceMove) {
-              setIsAnimating(true);
-              isAnimatingRef.current = true;
-              animatePieceMoveRemote(pieceMove, data);
-              return;
-            }
-            if (tileMove) {
-              setIsAnimating(true);
-              isAnimatingRef.current = true;
-              animateTileMoveRemote(tileMove, data);
-              return;
-            }
-            setGame(data);
-          }
-        }
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          console.error('Polling error:', err);
-        }
-      }
-    };
-
-    pollingRef.current = setInterval(poll, 1000);
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-    };
-  }, [game, gameId, router, animatePieceMoveRemote, animateTileMoveRemote]);
-
   // Computed values
   const myColor = useMemo(() => {
     if (!game || !playerId) return null;
@@ -516,6 +446,76 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     },
     [animateTileMoveBase]
   );
+
+  // Polling for game updates (1 second interval)
+  // Continue polling during FINISHED to detect rematch/end from opponent
+  useEffect(() => {
+    if (!game || game.status === 'ABANDONED') {
+      return;
+    }
+
+    const poll = async () => {
+      // Skip polling during animation to prevent state conflicts
+      if (isAnimatingRef.current) return;
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const res = await fetch(`/api/game/${gameId}`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data: GameSession = await res.json();
+          if (data.updatedAt !== lastUpdateRef.current) {
+            lastUpdateRef.current = data.updatedAt;
+            // Opponent ended the game - redirect to lobby
+            if (data.status === 'ABANDONED') {
+              router.push('/online');
+              return;
+            }
+            if (!game) {
+              setGame(data);
+              return;
+            }
+            // Only reset selection when turn changes (opponent made a move)
+            const turnChanged = game.turn !== data.turn;
+            if (turnChanged) {
+              setSelectedId(null);
+            }
+            const pieceMove = detectPieceMove(game.pieces, data.pieces);
+            const tileMove = pieceMove ? null : detectTileMove(game.tiles, data.tiles);
+            if (pieceMove) {
+              setIsAnimating(true);
+              isAnimatingRef.current = true;
+              animatePieceMoveRemote(pieceMove, data);
+              return;
+            }
+            if (tileMove) {
+              setIsAnimating(true);
+              isAnimatingRef.current = true;
+              animateTileMoveRemote(tileMove, data);
+              return;
+            }
+            setGame(data);
+          }
+        }
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Polling error:', err);
+        }
+      }
+    };
+
+    pollingRef.current = setInterval(poll, 1000);
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, [game, gameId, router, animatePieceMoveRemote, animateTileMoveRemote]);
 
   // Event handlers
   const handlePieceClick = (piece: Piece) => {
