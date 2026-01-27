@@ -860,7 +860,7 @@ export default function LocalGameClient() {
                                         router.push('/local?lang=en');
                                     }
                                 }}
-                                className="bg-transparent border-none cursor-pointer text-sm font-bold text-slate-600 hover:text-slate-900 whitespace-nowrap p-2"
+                                className="bg-transparent border-none cursor-pointer text-sm text-slate-500 hover:underline whitespace-nowrap p-2"
                             >
                                 {lang === 'en' ? '日本語に変更' : 'Change to English'}
                             </button>
