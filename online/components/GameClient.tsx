@@ -894,16 +894,6 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
               </div>
             </div>
           </div>
-          <div className="steps-grid">
-            <div className="step-item">
-              <span className="step-number">1</span>
-              <p>{strings.slideToEdge}</p>
-            </div>
-            <div className="step-item">
-              <span className="step-number">2</span>
-              <p>{strings.moveEmptyTile}</p>
-            </div>
-          </div>
         </div>
       </aside>
     </div>
