@@ -872,26 +872,27 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
       <aside className="rules-container">
         <div className="rules-card">
           <div className="goal-box">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: 16 }}>&#127942;</span>
-              <div>
-                <p>{strings.goal}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', gap: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={toggleLang}
+                className="goal-hint"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                {lang === 'en' ? '日本語に変更' : 'Change to English'}
+              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: 16 }}>&#127942;</span>
+                <div>
+                  <p>{strings.goal}</p>
+                </div>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={toggleLang}
-              className="goal-hint"
-              style={{
-                marginLeft: 'auto',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                textDecoration: 'underline',
-              }}
-            >
-              {lang === 'en' ? '日本語に変更' : 'Change to English'}
-            </button>
           </div>
           <div className="steps-grid">
             <div className="step-item">
