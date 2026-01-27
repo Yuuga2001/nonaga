@@ -31,13 +31,13 @@ body {
 .status-container { position: fixed; top: 3rem; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; padding: 0 1rem; width: 100%; z-index: 10; pointer-events: none; }
 .status-container > * { pointer-events: auto; }
 
-.mode-button { padding: 0.5rem 1.5rem; background-color: #6366f1; color: white; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2); margin-left: 1rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; min-width: 120px; }
-.mode-button:hover { background-color: #4f46e5; }
+.mode-button { padding: 0.5rem 1.5rem; background-color: #f59e0b; color: white; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); margin-left: 1rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; min-width: 120px; }
+.mode-button:hover { background-color: #d97706; }
 .mode-button.ai { background-color: #f59e0b; }
 .mode-button.ai { box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3); }
 .mode-button.ai:hover { background-color: #d97706; }
 .mode-button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.3); }
-.mode-button:disabled:hover { background-color: #6366f1; transform: none; }
+.mode-button:disabled:hover { background-color: #f59e0b; transform: none; }
 .mode-button.ai:disabled:hover { background-color: #f59e0b; }
 
 .victory-container { display: flex; flex-direction: column; align-items: center; z-index: 50; animation: slideInUp 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.49) forwards; }

@@ -712,9 +712,11 @@ export default function LocalGameClient() {
                 />
             )}
             <header className="header" role="banner">
-                <h1 className="game-title">Nonaga</h1>
-                <div style={{fontSize: '0.7rem', fontWeight: 600, color: '#64748b', marginTop: '0.2rem'}}>
-                    {gameMode === 'ai' ? strings.aiMode : strings.pvp}
+                <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+                    <h1 className="game-title">Nonaga</h1>
+                    <div style={{fontSize: '0.7rem', fontWeight: 600, color: '#64748b'}}>
+                        {gameMode === 'ai' ? strings.aiMode : strings.pvp}
+                    </div>
                 </div>
             </header>
 
