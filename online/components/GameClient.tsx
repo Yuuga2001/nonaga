@@ -524,6 +524,12 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
             <div className="waiting-spinner" />
             <h2>{strings.waitingForOpponent}</h2>
             <p style={{ marginTop: 16, color: '#64748b' }}>{strings.shareUrl}</p>
+            {game?.roomCode && (
+              <div className="room-code-box">
+                <p className="room-code-label">{strings.roomCodeLabel}</p>
+                <div className="room-code-value">{game.roomCode}</div>
+              </div>
+            )}
             <div className="url-box">
               <input
                 type="text"

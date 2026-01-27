@@ -17,6 +17,7 @@ export type PlayerColor = 'red' | 'blue';
 
 export interface GameSession {
   gameId: string;
+  roomCode?: string;
   status: GameStatus;
   hostPlayerId: string;
   guestPlayerId?: string;
@@ -256,10 +257,17 @@ export function calculateViewBounds(tiles: Tile[]): {
 export const I18N = {
   ja: {
     onlineTitle: 'オンライン対戦モード',
+    createRoom: 'ルームを作る',
+    joinRoom: 'ルームに入る',
+    localMatch: 'ローカル対戦',
     createGame: 'ゲームを作成',
     creating: '作成中...',
     waitingForOpponent: '対戦相手を待っています...',
     shareUrl: 'このURLを友達に共有:',
+    roomCodeLabel: 'ルーム番号',
+    enterRoomCode: 'ルーム番号を入力',
+    roomCodePlaceholder: '例: 123456',
+    invalidRoomCode: 'ルーム番号を確認してください',
     copyUrl: 'URLをコピー',
     copied: 'コピーしました!',
     joining: '参加中...',
@@ -276,6 +284,7 @@ export const I18N = {
     cancel: 'キャンセル',
     confirm: '終了する',
     backToLobby: 'ロビーに戻る',
+    back: '戻る',
     phaseMoveToken: '1. コマを滑らせる',
     phaseMoveTile: '2. タイルを動かす',
     goal: '自分のコマを 3つ連結 させれば勝ち!',
@@ -297,10 +306,17 @@ export const I18N = {
   },
   en: {
     onlineTitle: 'Online Mode',
+    createRoom: 'Create Room',
+    joinRoom: 'Join Room',
+    localMatch: 'Local Match',
     createGame: 'Create Game',
     creating: 'Creating...',
     waitingForOpponent: 'Waiting for opponent...',
     shareUrl: 'Share this URL with a friend:',
+    roomCodeLabel: 'Room Code',
+    enterRoomCode: 'Enter room code',
+    roomCodePlaceholder: 'e.g. 123456',
+    invalidRoomCode: 'Please check the room code',
     copyUrl: 'Copy URL',
     copied: 'Copied!',
     joining: 'Joining...',
@@ -317,6 +333,7 @@ export const I18N = {
     cancel: 'Cancel',
     confirm: 'End Game',
     backToLobby: 'Back to lobby',
+    back: 'Back',
     phaseMoveToken: '1. Slide a piece',
     phaseMoveTile: '2. Move a tile',
     goal: 'Win by connecting your three pieces!',

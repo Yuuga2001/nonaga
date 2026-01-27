@@ -41,6 +41,29 @@ const GET_GAME = `
   query GetGame($gameId: ID!) {
     getGame(gameId: $gameId) {
       gameId
+      roomCode
+      status
+      hostPlayerId
+      guestPlayerId
+      hostColor
+      tiles { q r }
+      pieces { id player q r }
+      turn
+      phase
+      winner
+      victoryLine
+      lastMoveAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const GET_GAME_BY_ROOM_CODE = `
+  query GetGameByRoomCode($roomCode: String!) {
+    getGameByRoomCode(roomCode: $roomCode) {
+      gameId
+      roomCode
       status
       hostPlayerId
       guestPlayerId
@@ -62,6 +85,7 @@ const CREATE_GAME = `
   mutation CreateGame($hostPlayerId: String!) {
     createGame(hostPlayerId: $hostPlayerId) {
       gameId
+      roomCode
       status
       hostPlayerId
       hostColor
@@ -79,6 +103,7 @@ const JOIN_GAME = `
   mutation JoinGame($gameId: ID!, $guestPlayerId: String!) {
     joinGame(gameId: $gameId, guestPlayerId: $guestPlayerId) {
       gameId
+      roomCode
       status
       hostPlayerId
       guestPlayerId
@@ -97,6 +122,7 @@ const MOVE_PIECE = `
   mutation MovePiece($input: MovePieceInput!) {
     movePiece(input: $input) {
       gameId
+      roomCode
       status
       hostPlayerId
       guestPlayerId
@@ -117,6 +143,7 @@ const MOVE_TILE = `
   mutation MoveTile($input: MoveTileInput!) {
     moveTile(input: $input) {
       gameId
+      roomCode
       status
       hostPlayerId
       guestPlayerId
@@ -137,6 +164,7 @@ const ABANDON_GAME = `
   mutation AbandonGame($gameId: ID!, $playerId: String!) {
     abandonGame(gameId: $gameId, playerId: $playerId) {
       gameId
+      roomCode
       status
       winner
       phase
@@ -149,6 +177,7 @@ const REMATCH_GAME = `
   mutation RematchGame($gameId: ID!, $playerId: String!) {
     rematchGame(gameId: $gameId, playerId: $playerId) {
       gameId
+      roomCode
       status
       hostPlayerId
       guestPlayerId
@@ -175,6 +204,21 @@ export async function getGame(gameId: string): Promise<GameSession | null> {
     return data.getGame;
   } catch (error) {
     console.error('getGame error:', error);
+    return null;
+  }
+}
+
+export async function getGameByRoomCode(
+  roomCode: string
+): Promise<GameSession | null> {
+  try {
+    const data = await graphqlRequest<{ getGameByRoomCode: GameSession | null }>(
+      GET_GAME_BY_ROOM_CODE,
+      { roomCode }
+    );
+    return data.getGameByRoomCode;
+  } catch (error) {
+    console.error('getGameByRoomCode error:', error);
     return null;
   }
 }

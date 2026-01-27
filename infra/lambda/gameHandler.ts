@@ -3,6 +3,7 @@ import {
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
+  QueryCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 
@@ -25,6 +26,7 @@ interface Piece {
 
 interface GameSession {
   gameId: string;
+  roomCode?: string;
   status: 'WAITING' | 'PLAYING' | 'FINISHED' | 'ABANDONED';
   hostPlayerId: string;
   guestPlayerId?: string;
@@ -98,6 +100,27 @@ function checkVictory(pieces: Piece[], player: 'red' | 'blue'): string[] | null 
     return playerPieces.map((p) => coordsKey(p.q, p.r));
   }
   return null;
+}
+
+async function generateRoomCode(): Promise<string> {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const result = await docClient.send(
+      new QueryCommand({
+        TableName: TABLE_NAME,
+        IndexName: 'RoomCodeIndex',
+        KeyConditionExpression: 'roomCode = :roomCode',
+        ExpressionAttributeValues: {
+          ':roomCode': code,
+        },
+        Limit: 1,
+      })
+    );
+    if (!result.Items || result.Items.length === 0) {
+      return code;
+    }
+  }
+  throw new Error('Failed to generate unique room code');
 }
 
 function getSlideDestination(
@@ -279,12 +302,14 @@ export async function handler(event: AppSyncEvent): Promise<GameSession> {
 
 async function createGame(hostPlayerId: string): Promise<GameSession> {
   const gameId = crypto.randomUUID();
+  const roomCode = await generateRoomCode();
   const now = new Date().toISOString();
   const ttl = Math.floor(Date.now() / 1000) + 86400; // 24 hours
   const hostColor: 'red' | 'blue' = Math.random() < 0.5 ? 'red' : 'blue';
 
   const game: GameSession = {
     gameId,
+    roomCode,
     status: 'WAITING',
     hostPlayerId,
     hostColor,

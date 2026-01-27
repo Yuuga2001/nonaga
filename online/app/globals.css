@@ -197,6 +197,30 @@ body {
     text-align: center;
 }
 
+.room-code-box {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.room-code-label {
+    font-size: 12px;
+    color: #64748b;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.room-code-value {
+    margin-top: 6px;
+    font-size: 22px;
+    font-weight: 800;
+    color: #1e293b;
+    letter-spacing: 0.2em;
+}
+
 .waiting-spinner {
     width: 64px;
     height: 64px;
@@ -305,11 +329,17 @@ body {
     text-align: center;
 }
 
+.lobby-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
 .language-footer {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 1.25rem;
+    bottom: calc(2.5rem + env(safe-area-inset-bottom));
     display: flex;
     justify-content: center;
     z-index: 10;
@@ -356,6 +386,88 @@ body {
 .create-game-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+.lobby-button {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 700;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lobby-button:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.lobby-button.secondary {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    color: #4338ca;
+}
+
+.lobby-button.secondary:hover {
+    background: #e0e7ff;
+}
+
+.lobby-button.primary {
+    background: linear-gradient(135deg, #10b981, #22c55e);
+    border: none;
+    color: white;
+}
+
+.lobby-button.primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+}
+
+.lobby-button.ghost {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    text-decoration: underline;
+}
+
+.lobby-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.join-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 16px;
+}
+
+.room-join-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.room-code-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid #cbd5e1;
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.2em;
+    color: #1e293b;
+}
+
+.room-code-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 .divider {

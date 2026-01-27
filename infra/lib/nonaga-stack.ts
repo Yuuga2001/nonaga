@@ -30,6 +30,14 @@ export class NonagaStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
+    // GSI for lookup by room code
+    gameTable.addGlobalSecondaryIndex({
+      indexName: 'RoomCodeIndex',
+      partitionKey: { name: 'roomCode', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'createdAt', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     // Lambda function for game logic
     const gameHandler = new nodejs.NodejsFunction(this, 'GameHandler', {
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -90,6 +98,32 @@ export class NonagaStack extends cdk.Stack {
         'gameId'
       ),
       responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
+    });
+
+    gameDataSource.createResolver('GetGameByRoomCodeResolver', {
+      typeName: 'Query',
+      fieldName: 'getGameByRoomCode',
+      requestMappingTemplate: appsync.MappingTemplate.fromString(`
+        {
+          "version": "2017-02-28",
+          "operation": "Query",
+          "index": "RoomCodeIndex",
+          "query": {
+            "expression": "roomCode = :roomCode",
+            "expressionValues": {
+              ":roomCode": $util.dynamodb.toDynamoDBJson($ctx.args.roomCode)
+            }
+          },
+          "limit": 1
+        }
+      `),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.result.items.size() == 0)
+          $util.toJson(null)
+        #else
+          $util.toJson($ctx.result.items[0])
+        #end
+      `),
     });
 
     // Mutation: createGame (via Lambda)

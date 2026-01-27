@@ -34,7 +34,10 @@ function persistLang(next: Lang) {
 export default function LobbyClient() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<'main' | 'join'>('main');
+  const [roomCode, setRoomCode] = useState('');
   const [lang, setLang] = useState<Lang>('ja');
   const strings = useMemo<I18NStrings>(() => I18N[lang], [lang]);
 
@@ -74,6 +77,36 @@ export default function LobbyClient() {
     }
   };
 
+  const handleJoinRoom = async () => {
+    setError(null);
+    const normalized = roomCode.trim().replace(/\s+/g, '');
+    const digitsOnly = normalized.replace(/\D/g, '');
+
+    if (digitsOnly.length !== 6) {
+      setError(strings.invalidRoomCode);
+      return;
+    }
+
+    setJoining(true);
+    try {
+      const res = await fetch(`/api/game/room/${digitsOnly}`);
+      if (!res.ok) {
+        setError(strings.gameNotFound);
+        return;
+      }
+      const game = await res.json();
+      if (game.status !== 'WAITING') {
+        setError(strings.gameAlreadyStarted);
+        return;
+      }
+      router.push(`/game/${game.gameId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setJoining(false);
+    }
+  };
+
   return (
     <div className="game-container bg-slate">
       <header className="header">
@@ -83,23 +116,72 @@ export default function LobbyClient() {
 
       <div className="lobby-container">
         <div className="lobby-card">
-          <button
-            onClick={handleCreateGame}
-            disabled={loading}
-            className="create-game-button"
-          >
-            {loading ? strings.creating : strings.createGame}
-          </button>
-
-          {error && <p className="error-message">{error}</p>}
-
-          <div className="divider">
-            <span>or</span>
-          </div>
-
-          <a href="/local" className="local-game-link">
-            ← {strings.localGame}
-          </a>
+          {view === 'main' ? (
+            <>
+              <div className="lobby-actions">
+                <button
+                  onClick={handleCreateGame}
+                  disabled={loading}
+                  className="create-game-button"
+                >
+                  {loading ? strings.creating : strings.createRoom}
+                </button>
+                <button
+                  onClick={() => {
+                    setView('join');
+                    setError(null);
+                  }}
+                  className="lobby-button secondary"
+                >
+                  {strings.joinRoom}
+                </button>
+                <button
+                  onClick={() => router.push('/local')}
+                  className="lobby-button"
+                >
+                  {strings.localMatch}
+                </button>
+              </div>
+              {error && <p className="error-message">{error}</p>}
+            </>
+          ) : (
+            <>
+              <div className="join-title">{strings.enterRoomCode}</div>
+              <div className="room-join-form">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={roomCode}
+                  onChange={(e) => {
+                    setRoomCode(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder={strings.roomCodePlaceholder}
+                  className="room-code-input"
+                />
+                <button
+                  onClick={handleJoinRoom}
+                  disabled={joining}
+                  className="lobby-button primary"
+                >
+                  {joining ? strings.joining : strings.joinGame}
+                </button>
+                <button
+                  onClick={() => {
+                    setView('main');
+                    setError(null);
+                  }}
+                  className="lobby-button ghost"
+                >
+                  {strings.back}
+                </button>
+              </div>
+              {error && <p className="error-message">{error}</p>}
+            </>
+          )}
         </div>
       </div>
       <div className="language-footer">
