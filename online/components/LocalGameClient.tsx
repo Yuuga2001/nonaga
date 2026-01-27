@@ -38,6 +38,7 @@ const I18N = {
         aiMode: 'AI対戦モード',
         onlineMode: 'オンライン対戦',
         selectMode: 'モード選択',
+        changeMode: 'モード変更',
         thinking: '🤖 AI思考中...',
         phaseMoveToken: '1. コマを滑らせる',
         phaseMoveTile: '2. タイルを動かす',
@@ -66,6 +67,7 @@ const I18N = {
         aiMode: 'Play vs AI',
         onlineMode: 'Online Battle',
         selectMode: 'Select Mode',
+        changeMode: 'Change Mode',
         thinking: '🤖 AI thinking...',
         phaseMoveToken: '1. Slide a piece',
         phaseMoveTile: '2. Move a tile',
@@ -711,6 +713,9 @@ export default function LocalGameClient() {
             )}
             <header className="header" role="banner">
                 <h1 className="game-title">Nonaga</h1>
+                <div style={{fontSize: '0.7rem', fontWeight: 600, color: '#64748b', marginTop: '0.2rem'}}>
+                    {gameMode === 'ai' ? strings.aiMode : strings.pvp}
+                </div>
             </header>
 
             <div className="status-container">
@@ -739,8 +744,8 @@ export default function LocalGameClient() {
                                     {gameMode === 'ai' ? (aiPlayer === 'blue' ? strings.ai : strings.you) : strings.playerBlue}
                                 </div>
                             </div>
-                            <button onClick={() => setShowModeSelector(true)} className={`mode-button ${gameMode === 'ai' ? 'ai' : ''}`} disabled={isAnimating || aiThinking}>
-                                {gameMode === 'pvp' ? strings.pvp : strings.aiMode}
+                            <button onClick={() => setShowModeSelector(true)} className="mode-button" disabled={isAnimating || aiThinking}>
+                                {strings.changeMode}
                             </button>
                         </div>
                         <div style={{fontSize:11, fontWeight:800, color:'#94a3b8', marginTop:10, textTransform:'uppercase', letterSpacing: '0.1em'}}>
