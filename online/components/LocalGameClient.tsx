@@ -840,7 +840,14 @@ export default function LocalGameClient() {
             <aside className="rules-container" role="complementary" aria-label={strings.rulesLabel}>
                 <div className="rules-card">
                     <div className="goal-box">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', gap: '0.5rem' }}>
+                            <Link
+                                href={lang === 'en' ? '/' : '/?lang=en'}
+                                className="goal-hint"
+                                style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                            >
+                                {lang === 'en' ? '日本語に変更' : 'Change to English'}
+                            </Link>
                             <a
                                 href={aboutUrl}
                                 target="_blank"
@@ -853,13 +860,6 @@ export default function LocalGameClient() {
                                     <p className="goal-hint" style={{ margin: 0 }}>{strings.goalHint}</p>
                                 </div>
                             </a>
-                            <Link
-                                href={lang === 'en' ? '/' : '/?lang=en'}
-                                className="goal-hint"
-                                style={{ cursor: 'pointer', textDecoration: 'underline', alignSelf: 'center' }}
-                            >
-                                {lang === 'en' ? '日本語に変更' : 'Change to English'}
-                            </Link>
                         </div>
                     </div>
                     <div className="steps-grid">
