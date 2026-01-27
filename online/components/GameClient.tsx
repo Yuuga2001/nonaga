@@ -541,7 +541,12 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
   return (
     <div className={`game-container ${bgClass}`}>
       <header className="header">
-        <h1 className="game-title">Nonaga</h1>
+        <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+          <h1 className="game-title">Nonaga</h1>
+          <div style={{fontSize: '0.7rem', fontWeight: 600, color: '#64748b'}}>
+            {strings.onlineTitle}
+          </div>
+        </div>
       </header>
 
       <div className="status-container">
@@ -587,6 +592,9 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
                   {myColor === 'blue' ? strings.you : strings.opponent}
                 </div>
               </div>
+              <button onClick={handleEndGame} className="mode-button" disabled={isAnimating}>
+                {strings.endGame}
+              </button>
             </div>
             <div
               style={{
