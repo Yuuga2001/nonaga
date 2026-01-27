@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { I18N, type I18NStrings } from '@/lib/gameLogic';
 
@@ -14,21 +14,41 @@ function getPlayerId(): string {
   return id;
 }
 
-function getStrings(): I18NStrings {
-  if (typeof window === 'undefined') return I18N.ja;
-  const lang = (document.documentElement.lang || 'ja').toLowerCase();
-  return lang.startsWith('en') ? I18N.en : I18N.ja;
+type Lang = 'ja' | 'en';
+
+const LANG_KEY = 'nonaga_lang';
+
+function readLang(): Lang {
+  if (typeof window === 'undefined') return 'ja';
+  const stored = localStorage.getItem(LANG_KEY);
+  const lang = (stored || document.documentElement.lang || 'ja').toLowerCase();
+  return lang.startsWith('en') ? 'en' : 'ja';
+}
+
+function persistLang(next: Lang) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(LANG_KEY, next);
+  document.documentElement.lang = next;
 }
 
 export default function LobbyClient() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [strings, setStrings] = useState<I18NStrings>(I18N.ja);
+  const [lang, setLang] = useState<Lang>('ja');
+  const strings = useMemo<I18NStrings>(() => I18N[lang], [lang]);
 
   useEffect(() => {
-    setStrings(getStrings());
+    setLang(readLang());
   }, []);
+
+  useEffect(() => {
+    persistLang(lang);
+  }, [lang]);
+
+  const toggleLang = () => {
+    setLang((prev) => (prev === 'en' ? 'ja' : 'en'));
+  };
 
   const handleCreateGame = async () => {
     setLoading(true);
@@ -80,6 +100,22 @@ export default function LobbyClient() {
           <a href="/local" className="local-game-link">
             ← {strings.localGame}
           </a>
+          <button
+            type="button"
+            onClick={toggleLang}
+            style={{
+              marginTop: 12,
+              background: 'none',
+              border: 'none',
+              color: '#4f46e5',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              textDecoration: 'underline',
+              cursor: 'pointer',
+            }}
+          >
+            {lang === 'en' ? '日本語に変更' : 'Change to English'}
+          </button>
         </div>
       </div>
     </div>

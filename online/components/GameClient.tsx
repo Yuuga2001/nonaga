@@ -29,10 +29,21 @@ function getPlayerId(): string {
   return id;
 }
 
-function getStrings(): I18NStrings {
-  if (typeof window === 'undefined') return I18N.ja;
-  const lang = (document.documentElement.lang || 'ja').toLowerCase();
-  return lang.startsWith('en') ? I18N.en : I18N.ja;
+type Lang = 'ja' | 'en';
+
+const LANG_KEY = 'nonaga_lang';
+
+function readLang(): Lang {
+  if (typeof window === 'undefined') return 'ja';
+  const stored = localStorage.getItem(LANG_KEY);
+  const lang = (stored || document.documentElement.lang || 'ja').toLowerCase();
+  return lang.startsWith('en') ? 'en' : 'ja';
+}
+
+function persistLang(next: Lang) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(LANG_KEY, next);
+  document.documentElement.lang = next;
 }
 
 interface GameClientProps {
@@ -42,7 +53,8 @@ interface GameClientProps {
 
 export default function GameClient({ gameId, initialGame }: GameClientProps) {
   const router = useRouter();
-  const [strings, setStrings] = useState<I18NStrings>(I18N.ja);
+  const [lang, setLang] = useState<Lang>('ja');
+  const strings = useMemo<I18NStrings>(() => I18N[lang], [lang]);
   const [playerId, setPlayerId] = useState<string>('');
   const [game, setGame] = useState<GameSession | null>(initialGame);
   const [loading, setLoading] = useState(!initialGame);
@@ -70,9 +82,13 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
 
   // Initialize client-side state
   useEffect(() => {
-    setStrings(getStrings());
+    setLang(readLang());
     setPlayerId(getPlayerId());
   }, []);
+
+  useEffect(() => {
+    persistLang(lang);
+  }, [lang]);
 
   // Fetch game and join if needed
   useEffect(() => {
@@ -465,6 +481,10 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     router.push('/');
   };
 
+  const toggleLang = () => {
+    setLang((prev) => (prev === 'en' ? 'ja' : 'en'));
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -703,10 +723,26 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
       <aside className="rules-container">
         <div className="rules-card">
           <div className="goal-box">
-            <span style={{ fontSize: 16 }}>&#127942;</span>
-            <div>
-              <p>{strings.goal}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: 16 }}>&#127942;</span>
+              <div>
+                <p>{strings.goal}</p>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={toggleLang}
+              className="goal-hint"
+              style={{
+                marginLeft: 'auto',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+              }}
+            >
+              {lang === 'en' ? '日本語に変更' : 'Change to English'}
+            </button>
           </div>
           <div className="steps-grid">
             <div className="step-item">
