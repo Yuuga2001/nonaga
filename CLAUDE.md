@@ -7,12 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 NONAGA is a strategic hexagonal board game with three game modes:
 - **Local game (vanilla)**: Single-file HTML application (`index.html`) using vanilla React via CDN — PvP and AI modes
 - **Local game (Next.js)**: `/online/app/local/` route with `LocalGameClient.tsx` — PvP and AI modes within Next.js app
-- **Online game**: Next.js 15 + React 19 application (`/online/`) with AWS AppSync for real-time multiplayer
+- **Online game**: Next.js 15 + React 19 application (`/online/`) with AWS AppSync for real-time multiplayer, room code matchmaking
 
 Play URLs:
 - Local: https://nonaga.riverapp.jp/
 - Online lobby: https://nonaga.riverapp.jp/online/
 - Local (Next.js): https://nonaga.riverapp.jp/online/local
+
+**Matchmaking**: Online games generate a 6-digit room code for easy matchmaking without sharing full URLs
 
 ## Architecture
 
@@ -37,6 +39,7 @@ online/
 │   ├── game/[gameId]/page.tsx     # Online game page
 │   └── api/game/
 │       ├── route.ts                       # POST: create game
+│       ├── room/[roomCode]/route.ts       # GET: find game by room code
 │       └── [gameId]/
 │           ├── route.ts                   # GET/DELETE: game state
 │           ├── join/route.ts              # POST: join game
@@ -57,6 +60,8 @@ online/
 **Real-time sync**: Client-side 1-second polling via `GET /api/game/[gameId]`
 
 **Server-side GraphQL**: API routes call AppSync via `lib/graphql.ts` using server-side env vars
+- Queries: `getGame(gameId)`, `getGameByRoomCode(roomCode)`
+- Mutations: `createGame`, `joinGame`, `movePiece`, `moveTile`, `abandonGame`, `rematchGame`
 
 ### LocalGameClient vs GameClient
 
@@ -72,7 +77,9 @@ online/
 
 AWS CDK (TypeScript) deploying:
 - **AppSync**: GraphQL API with Lambda + DynamoDB resolvers
-- **DynamoDB**: Game sessions with TTL (24h), GSI on status+createdAt
+- **DynamoDB**: Game sessions with TTL (24h), GSIs:
+  - `StatusIndex` (status + createdAt) — for listing waiting games
+  - `RoomCodeIndex` (roomCode + createdAt) — for room code lookup
 - **Lambda**: `gameHandler.ts` — validates moves, checks victory, ensures board connectivity
 
 Stack names: `NonagaStack-Dev` / `NonagaStack-Prod`
@@ -83,11 +90,15 @@ Stack names: `NonagaStack-Dev` / `NonagaStack-Prod`
 
 **Game State**:
 ```typescript
+gameId: string
+roomCode?: string                       // 6-digit matchmaking code
 tiles: Array<{q, r}>                    // 19 tile positions
 pieces: Array<{id, player, q, r}>       // 6 pieces (3 red, 3 blue)
 turn: 'red' | 'blue'
 phase: 'waiting' | 'move_token' | 'move_tile' | 'ended'
 status: 'WAITING' | 'PLAYING' | 'FINISHED' | 'ABANDONED'
+hostPlayerId: string
+guestPlayerId?: string
 ```
 
 ### Critical Algorithms
@@ -104,6 +115,7 @@ In `online/lib/gameLogic.ts` (frontend) and `infra/lambda/gameHandler.ts` (backe
 ### Local Game (Vanilla)
 ```bash
 npx serve .              # Serve at localhost:3000
+python3 -m http.server   # Alternative: Serve at localhost:8000
 ```
 
 ### Online Frontend
@@ -118,9 +130,11 @@ npm run build            # Production build (.next/)
 ```bash
 cd infra
 npm install
+npx cdk bootstrap        # First-time setup: prepare AWS environment for CDK
 npm run deploy:dev       # cdk deploy NonagaStack-Dev --require-approval never
 npm run deploy:prod      # cdk deploy NonagaStack-Prod --require-approval never
 npm run diff:dev         # cdk diff NonagaStack-Dev
+npm run diff:prod        # cdk diff NonagaStack-Prod
 npx cdk synth            # Generate CloudFormation template
 ```
 
@@ -157,3 +171,4 @@ Environment variables (`APPSYNC_ENDPOINT`, `APPSYNC_API_KEY`) must be set in Amp
 7. **Move retry**: `GameClient.tsx` retries failed moves up to 3 times with 500ms delay
 8. **useSearchParams requires Suspense**: `LocalGameClient.tsx` uses `useSearchParams()` which requires wrapping in `<Suspense>` in the page component
 9. **LocalGameClient renders its own SVG**: Unlike GameClient which uses Board.tsx, LocalGameClient renders the board inline (faithful port of app.jsx)
+10. **Room code validation**: Room codes are 6 digits; client validates format and strips non-numeric characters before API calls
