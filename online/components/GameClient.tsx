@@ -447,6 +447,9 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
   };
 
   const handleEndGame = async () => {
+    if (!confirm(strings.confirmEndGame)) {
+      return;
+    }
     try {
       await fetch(`/api/game/${gameId}`, {
         method: 'DELETE',
