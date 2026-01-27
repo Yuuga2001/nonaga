@@ -103,15 +103,11 @@ body {
 
 /* Rules section */
 .rules-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 0 1rem 0.5rem;
-    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    position: static;
+    padding: 0 1rem calc(0.5rem + env(safe-area-inset-bottom));
     width: 100%;
     max-width: 32rem;
-    margin: 0 auto;
+    margin: 0.5rem auto 0;
     pointer-events: none;
     z-index: 10;
 }
