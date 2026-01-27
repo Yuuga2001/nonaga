@@ -100,23 +100,12 @@ export default function LobbyClient() {
           <a href="/local" className="local-game-link">
             ← {strings.localGame}
           </a>
-          <button
-            type="button"
-            onClick={toggleLang}
-            style={{
-              marginTop: 12,
-              background: 'none',
-              border: 'none',
-              color: '#4f46e5',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              textDecoration: 'underline',
-              cursor: 'pointer',
-            }}
-          >
-            {lang === 'en' ? '日本語に変更' : 'Change to English'}
-          </button>
         </div>
+      </div>
+      <div className="language-footer">
+        <button type="button" onClick={toggleLang} className="language-toggle">
+          {lang === 'en' ? '日本語に変更' : 'Change to English'}
+        </button>
       </div>
     </div>
   );
