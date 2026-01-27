@@ -55,13 +55,14 @@ body {
 .player-dot.blue { background-color: #6366f1; }
 
 .board-container {
-    --board-gap: clamp(4rem, 10vh, 7rem);
+    --board-gap-top: clamp(4.5rem, 11vh, 7.5rem);
+    --board-gap-bottom: clamp(3.5rem, 9vh, 6rem);
     flex: 1;
     display: flex;
     align-items: center;
-    padding-top: var(--board-gap);
+    padding-top: var(--board-gap-top);
     justify-content: center;
-    padding: 1rem 0.5rem var(--board-gap);
+    padding: 1rem 0.5rem var(--board-gap-bottom);
     touch-action: none;
     min-height: 0;
     overflow: visible;
