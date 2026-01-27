@@ -191,38 +191,6 @@ export default function LocalGameClient() {
         }
     }, [searchParams]);
 
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const updateOffsets = () => {
-            const headerHeight = headerRef.current?.offsetHeight ?? 0;
-            const statusHeight = statusRef.current?.offsetHeight ?? 0;
-            const rulesHeight = rulesRef.current?.offsetHeight ?? 0;
-            const topOffset = headerHeight + statusHeight + 8;
-            const bottomOffset = rulesHeight + 8;
-            container.style.setProperty('--ui-top-offset', `${topOffset}px`);
-            container.style.setProperty('--ui-bottom-offset', `${bottomOffset}px`);
-        };
-
-        updateOffsets();
-
-        if (typeof ResizeObserver === 'undefined') {
-            window.addEventListener('resize', updateOffsets);
-            return () => window.removeEventListener('resize', updateOffsets);
-        }
-
-        const observer = new ResizeObserver(() => updateOffsets());
-        if (headerRef.current) observer.observe(headerRef.current);
-        if (statusRef.current) observer.observe(statusRef.current);
-        if (rulesRef.current) observer.observe(rulesRef.current);
-        window.addEventListener('resize', updateOffsets);
-        return () => {
-            observer.disconnect();
-            window.removeEventListener('resize', updateOffsets);
-        };
-    }, []);
-
     const [tiles, setTiles] = useState<Tile[]>(INITIAL_TILES);
     const [pieces, setPieces] = useState<Piece[]>(INITIAL_PIECES);
     const [turn, setTurn] = useState<Player>('red');
@@ -238,10 +206,6 @@ export default function LocalGameClient() {
     const [aiThinking, setAiThinking] = useState(false);
     const [isShuffling, setIsShuffling] = useState(true);
     const [showModeSelector, setShowModeSelector] = useState(false);
-    const containerRef = useRef<HTMLDivElement | null>(null);
-    const headerRef = useRef<HTMLElement | null>(null);
-    const statusRef = useRef<HTMLDivElement | null>(null);
-    const rulesRef = useRef<HTMLElement | null>(null);
     const animationFrameRef = useRef<number | null>(null);
     const shuffleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const aboutUrl = lang === 'en' ? '/en/about/' : '/about/';
@@ -738,7 +702,7 @@ export default function LocalGameClient() {
     }, [selectedId, phase, tiles, pieces, tileMap, pieceMap, winner, isAnimating]);
 
     return (
-        <div ref={containerRef} id="main-content" className={`game-container ${winner === 'red' ? 'bg-rose' : winner === 'blue' ? 'bg-indigo' : 'bg-slate'}`}>
+        <div id="main-content" className={`game-container ${winner === 'red' ? 'bg-rose' : winner === 'blue' ? 'bg-indigo' : 'bg-slate'}`}>
             {winner && <Confetti winner={winner} />}
             {showModeSelector && (
                 <ModeSelector
@@ -748,7 +712,7 @@ export default function LocalGameClient() {
                     onClose={() => setShowModeSelector(false)}
                 />
             )}
-            <header ref={headerRef} className="header" role="banner">
+            <header className="header" role="banner">
                 <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
                     <h1 className="game-title">Nonaga</h1>
                     <div style={{
@@ -767,7 +731,7 @@ export default function LocalGameClient() {
                 </div>
             </header>
 
-            <div ref={statusRef} className="status-container">
+            <div className="status-container">
                 {isShuffling && gameMode === 'ai' ? (
                     <ShuffleAnimation strings={strings} />
                 ) : winner ? (
@@ -873,7 +837,7 @@ export default function LocalGameClient() {
                 </svg>
             </div>
 
-            <aside ref={rulesRef} className="rules-container" role="complementary" aria-label={strings.rulesLabel}>
+            <aside className="rules-container" role="complementary" aria-label={strings.rulesLabel}>
                 <div className="rules-card">
                     <div className="goal-box">
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', gap: '0.5rem' }}>

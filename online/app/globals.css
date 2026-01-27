@@ -19,19 +19,16 @@ body {
     transition: background-color 1s ease;
     width: 100%;
     position: relative;
-    --ui-top-offset: 0px;
-    --ui-bottom-offset: 0px;
 }
 
 .game-container.bg-rose { background-color: #fff1f2; }
 .game-container.bg-indigo { background-color: #eef2ff; }
 .game-container.bg-slate { background-color: #f8fafc; }
 
-.header { position: fixed; top: 0; left: 0; right: 0; padding: 0.5rem 1rem; padding-top: calc(0.5rem + env(safe-area-inset-top)); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; pointer-events: none; }
+.header { position: static; padding: 0.5rem 1rem; padding-top: calc(0.5rem + env(safe-area-inset-top)); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; pointer-events: auto; }
 .game-title { font-size: 1.1rem; font-weight: 900; color: #1e293b; font-style: italic; text-transform: uppercase; letter-spacing: 0.3em; }
 
-.status-container { position: fixed; top: 3rem; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; padding: 0 1rem; width: 100%; z-index: 10; pointer-events: none; }
-.status-container > * { pointer-events: auto; }
+.status-container { position: static; display: flex; flex-direction: column; align-items: center; padding: 0 1rem; width: 100%; z-index: 10; }
 
 .mode-button { padding: 0.5rem 1.5rem; background-color: #e2e8f0; color: #475569; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(148, 163, 184, 0.15); margin-left: 1rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; min-width: 120px; }
 .mode-button:hover { background-color: #cbd5e1; }
@@ -60,9 +57,8 @@ body {
     flex: 1;
     display: flex;
     align-items: center;
-    padding-top: calc(1rem + var(--ui-top-offset));
     justify-content: center;
-    padding: 1rem 0.5rem calc(1rem + var(--ui-bottom-offset));
+    padding: 1rem 0.5rem 5rem;
     touch-action: none;
     min-height: 0;
     overflow: visible;
