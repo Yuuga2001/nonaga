@@ -1,9 +1,15 @@
-# NONAGA（ノナガ）
+<div align="center">
+  <img src="public/apple-touch-icon.png" alt="NONAGA icon" width="96" height="96" />
+  <h1>NONAGA（ノナガ）</h1>
+</div>
 
 盤面そのものを動かせる、六角形の新感覚ストラテジーボードゲーム。3つのコマを隣接させたら勝利です。ブラウザだけで、1人でもAI対戦でもすぐに遊べます。
 
-- ローカル対戦（AI / 2人）: https://nonaga.riverapp.jp/online/local
-- オンライン対戦: https://nonaga.riverapp.jp/online/
+<div align="center">
+  <a href="https://nonaga.riverapp.jp">
+    <img alt="今すぐプレイ" src="https://img.shields.io/badge/%E4%BB%8A%E3%81%99%E3%81%90%E3%83%97%E3%83%AC%E3%82%A4-%E2%86%92-22C55E?style=for-the-badge&logo=google-play&logoColor=white" />
+  </a>
+</div>
 
 ![NONAGA gameplay screenshot](public/screenshot.png)
 
@@ -14,7 +20,7 @@
 - 盤面タイルを動かす独自ルールで、定番ボードゲームにない戦術性
 - 6方向スライド移動で読み合いが生まれるテンポの良い対戦
 - AI対戦モード / 2人対戦モードの切り替え
-- **オンライン対戦対応（URLを共有するだけで友達と対戦可能）**
+- **オンライン対戦対応（URL共有/ルーム番号で参加可能）**
 - **リマッチ機能（オンライン対戦で連続対戦可能）**
 - レスポンシブ対応（PC / タブレット / スマホ）
 - 日本語 / 英語対応
@@ -53,7 +59,7 @@ cp .env.example .env
 npm run dev
 ```
 
-ブラウザで http://localhost:3000 にアクセスしてください。
+ブラウザで http://localhost:3000 にアクセスしてください（ローカル対戦）。ロビーは http://localhost:3000/online です。
 
 ### ローカル版（レガシー）
 
@@ -77,9 +83,10 @@ nonaga/
 ├── app.css              # ローカル版スタイル
 ├── online/              # オンライン版（Next.js）
 │   ├── app/
-│   │   ├── layout.tsx, page.tsx    # ルートレイアウト + ロビー
+│   │   ├── layout.tsx, page.tsx    # ルートレイアウト + ローカル対戦
 │   │   ├── globals.css             # 全スタイル
 │   │   ├── local/page.tsx          # ローカル対戦（AI/2人）
+│   │   ├── online/page.tsx         # ロビー
 │   │   ├── about/page.tsx          # アバウトページ（日本語）
 │   │   ├── en/about/page.tsx       # アバウトページ（英語）
 │   │   ├── game/[gameId]/page.tsx  # オンラインゲーム

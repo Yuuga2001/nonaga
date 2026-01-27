@@ -10,9 +10,10 @@ NONAGA is a strategic hexagonal board game with three game modes:
 - **Online game**: Next.js 15 + React 19 application (`/online/`) with AWS AppSync for real-time multiplayer, room code matchmaking
 
 Play URLs:
-- Local: https://nonaga.riverapp.jp/
+- Local (vanilla): Served via `index.html` at root (legacy)
+- Local (Next.js): https://nonaga.riverapp.jp/ — root route now serves LocalGameClient
 - Online lobby: https://nonaga.riverapp.jp/online/
-- Local (Next.js): https://nonaga.riverapp.jp/online/local
+- Local (Next.js, alternate): https://nonaga.riverapp.jp/online/local — duplicate route for backward compatibility
 
 **Matchmaking**: Online games generate a 6-digit room code for easy matchmaking without sharing full URLs
 
@@ -31,9 +32,11 @@ Next.js 15 App Router with standalone output (`next.config.js: output: 'standalo
 ```
 online/
 ├── app/
-│   ├── layout.tsx, page.tsx       # Root layout + Lobby page
+│   ├── layout.tsx                 # Root layout
+│   ├── page.tsx                   # Root page: LocalGameClient (local game at /)
 │   ├── globals.css                # All styles + animations
-│   ├── local/page.tsx             # Local game (AI/PvP) route
+│   ├── online/page.tsx            # Lobby page (moved from root)
+│   ├── local/page.tsx             # Local game route (duplicate for backward compat)
 │   ├── about/page.tsx             # About page (Japanese)
 │   ├── en/about/page.tsx          # About page (English)
 │   ├── game/[gameId]/page.tsx     # Online game page
@@ -46,10 +49,10 @@ online/
 │           ├── move/route.ts              # POST: move piece/tile
 │           └── rematch/route.ts           # POST: request rematch
 ├── components/
-│   ├── LobbyClient.tsx            # Game creation UI
+│   ├── LobbyClient.tsx            # Game creation UI (~180 lines)
 │   ├── GameClient.tsx             # Online game logic (~700 lines)
-│   ├── LocalGameClient.tsx        # Local game (AI/PvP) (~850 lines)
-│   └── Board.tsx                  # SVG board rendering (online only)
+│   ├── LocalGameClient.tsx        # Local game (AI/PvP) (~1350 lines)
+│   └── Board.tsx                  # SVG board rendering (~200 lines, online only)
 ├── lib/
 │   ├── gameLogic.ts               # Shared game logic, types, i18n
 │   └── graphql.ts                 # Server-side AppSync client
@@ -62,6 +65,13 @@ online/
 **Server-side GraphQL**: API routes call AppSync via `lib/graphql.ts` using server-side env vars
 - Queries: `getGame(gameId)`, `getGameByRoomCode(roomCode)`
 - Mutations: `createGame`, `joinGame`, `movePiece`, `moveTile`, `abandonGame`, `rematchGame`
+
+**Routing Structure** (as of recent refactoring):
+- `/` (root): LocalGameClient — local game (AI/PvP) with Next.js
+- `/online`: LobbyClient — create/join online games
+- `/online/local`: LocalGameClient — duplicate route for backward compatibility
+- `/game/[gameId]`: GameClient — online multiplayer game
+- `/about`, `/en/about`: About pages (Japanese/English)
 
 ### LocalGameClient vs GameClient
 
@@ -140,13 +150,14 @@ npx cdk synth            # Generate CloudFormation template
 
 ### Environment Variables (Online)
 
-Server-side env vars (set in `.env.production` or hosting environment):
+Server-side env vars (set in `.env.local` for development or hosting environment for production):
 ```
 APPSYNC_ENDPOINT=https://xxx.appsync-api.region.amazonaws.com/graphql
 APPSYNC_API_KEY=da2-xxx
 ```
 
 No `VITE_` prefix — these are Next.js server-side only (used in API routes).
+Note: There is no `.env.example` file in the repository; create `.env.local` manually for local development.
 
 ## Deployment
 
@@ -172,3 +183,4 @@ Environment variables (`APPSYNC_ENDPOINT`, `APPSYNC_API_KEY`) must be set in Amp
 8. **useSearchParams requires Suspense**: `LocalGameClient.tsx` uses `useSearchParams()` which requires wrapping in `<Suspense>` in the page component
 9. **LocalGameClient renders its own SVG**: Unlike GameClient which uses Board.tsx, LocalGameClient renders the board inline (faithful port of app.jsx)
 10. **Room code validation**: Room codes are 6 digits; client validates format and strips non-numeric characters before API calls
+11. **Duplicate routes**: `/` and `/online/local` both render LocalGameClient; root was recently changed from lobby to local game for better UX
