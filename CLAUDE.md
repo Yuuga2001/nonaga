@@ -10,10 +10,11 @@ NONAGA is a strategic hexagonal board game with three game modes:
 - **Online game**: Next.js 15 + React 19 application (`/online/`) with AWS AppSync for real-time multiplayer, room code matchmaking
 
 Play URLs:
-- Local (vanilla): Served via `index.html` at root (legacy)
-- Local (Next.js): https://nonaga.riverapp.jp/ — root route now serves LocalGameClient
+- Production: https://nonaga.riverapp.jp/ — root route serves LocalGameClient (Next.js)
 - Online lobby: https://nonaga.riverapp.jp/online/
 - Local (Next.js, alternate): https://nonaga.riverapp.jp/online/local — duplicate route for backward compatibility
+
+**Note**: Vanilla version (`index.html`) is NOT deployed to Amplify. It exists in the repository for development purposes only and can be accessed via `npx serve .` locally.
 
 **Matchmaking**: Online games generate a 6-digit room code for easy matchmaking without sharing full URLs
 
@@ -21,9 +22,12 @@ Play URLs:
 
 ### Local Game (Vanilla: `index.html`, `app.jsx`, `app.css`)
 
+**Status**: Development only — NOT deployed to Amplify
+
 Single-file HTML application transpiled via Babel CDN. No build tools required.
 - AI opponent uses position evaluation scoring
 - SVG-based board rendering
+- Accessible only via local development server (`npx serve .`)
 
 ### Online Game (`/online/`)
 
@@ -122,7 +126,8 @@ In `online/lib/gameLogic.ts` (frontend) and `infra/lambda/gameHandler.ts` (backe
 
 ## Development Commands
 
-### Local Game (Vanilla)
+### Local Game (Vanilla - Development Only)
+**Note**: Vanilla version is NOT deployed to production. Use these commands for local development only.
 ```bash
 npx serve .              # Serve at localhost:3000
 python3 -m http.server   # Alternative: Serve at localhost:8000
