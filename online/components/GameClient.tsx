@@ -566,6 +566,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
 
     if (phase === 'move_tile' && typeof selectedId === 'number') {
       const tile = tiles[selectedId];
+      setSelectedId(null);
       setIsAnimating(true);
       isAnimatingRef.current = true;
       animateTileMoveLocal(selectedId, tile.q, tile.r, dest.q, dest.r);

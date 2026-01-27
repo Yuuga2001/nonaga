@@ -58,9 +58,9 @@ body {
     flex: 1;
     display: flex;
     align-items: center;
-    padding-top: 6rem;
+    padding-top: clamp(5rem, 12vh, 9rem);
     justify-content: center;
-    padding: 1rem 0.5rem 7rem;
+    padding: 1rem 0.5rem clamp(5rem, 14vh, 10rem);
     touch-action: none;
     min-height: 0;
     overflow: visible;
