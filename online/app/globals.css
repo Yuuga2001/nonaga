@@ -19,6 +19,8 @@ body {
     transition: background-color 1s ease;
     width: 100%;
     position: relative;
+    --ui-top-offset: 0px;
+    --ui-bottom-offset: 0px;
 }
 
 .game-container.bg-rose { background-color: #fff1f2; }
@@ -55,14 +57,12 @@ body {
 .player-dot.blue { background-color: #6366f1; }
 
 .board-container {
-    --board-gap-top: clamp(6.5rem, 16vh, 10rem);
-    --board-gap-bottom: clamp(2.5rem, 7vh, 5rem);
     flex: 1;
     display: flex;
     align-items: center;
-    padding-top: var(--board-gap-top);
+    padding-top: calc(1rem + var(--ui-top-offset));
     justify-content: center;
-    padding: 1rem 0.5rem var(--board-gap-bottom);
+    padding: 1rem 0.5rem calc(1rem + var(--ui-bottom-offset));
     touch-action: none;
     min-height: 0;
     overflow: visible;

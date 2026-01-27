@@ -133,6 +133,10 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
   const [copied, setCopied] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const statusRef = useRef<HTMLDivElement | null>(null);
+  const rulesRef = useRef<HTMLElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateRef = useRef<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -147,6 +151,38 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
   useEffect(() => {
     persistLang(lang);
   }, [lang]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateOffsets = () => {
+      const headerHeight = headerRef.current?.offsetHeight ?? 0;
+      const statusHeight = statusRef.current?.offsetHeight ?? 0;
+      const rulesHeight = rulesRef.current?.offsetHeight ?? 0;
+      const topOffset = headerHeight + statusHeight + 8;
+      const bottomOffset = rulesHeight + 8;
+      container.style.setProperty('--ui-top-offset', `${topOffset}px`);
+      container.style.setProperty('--ui-bottom-offset', `${bottomOffset}px`);
+    };
+
+    updateOffsets();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateOffsets);
+      return () => window.removeEventListener('resize', updateOffsets);
+    }
+
+    const observer = new ResizeObserver(() => updateOffsets());
+    if (headerRef.current) observer.observe(headerRef.current);
+    if (statusRef.current) observer.observe(statusRef.current);
+    if (rulesRef.current) observer.observe(rulesRef.current);
+    window.addEventListener('resize', updateOffsets);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateOffsets);
+    };
+  }, []);
 
   // Fetch game and join if needed
   useEffect(() => {
@@ -718,7 +754,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     winner === 'red' ? 'bg-rose' : winner === 'blue' ? 'bg-indigo' : 'bg-slate';
 
   return (
-    <div className={`game-container ${bgClass}`}>
+    <div ref={containerRef} className={`game-container ${bgClass}`}>
       {showEndConfirm && (
         <div className="mode-selector-overlay" onClick={() => setShowEndConfirm(false)}>
           <div className="mode-selector-modal" onClick={(e) => e.stopPropagation()}>
@@ -768,7 +804,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
           </div>
         </div>
       )}
-      <header className="header">
+      <header ref={headerRef} className="header">
         <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
           <h1 className="game-title">Nonaga</h1>
           <div style={{
@@ -787,7 +823,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         </div>
       </header>
 
-      <div className="status-container">
+      <div ref={statusRef} className="status-container">
         {winner ? (
           <div className="victory-container">
             <div className={`victory-badge ${winner}`}>
@@ -873,7 +909,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         onDestinationClick={handleDestinationClick}
       />
 
-      <aside className="rules-container">
+      <aside ref={rulesRef} className="rules-container">
         <div className="rules-card">
           <div className="goal-box">
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', gap: '0.5rem' }}>
