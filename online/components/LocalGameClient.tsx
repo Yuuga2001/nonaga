@@ -838,22 +838,32 @@ export default function LocalGameClient() {
 
             <aside className="rules-container" role="complementary" aria-label={strings.rulesLabel}>
                 <div className="rules-card">
-                    <div
-                        className="goal-box"
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => { window.location.href = aboutUrl; }}
-                        onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                                event.preventDefault();
-                                window.location.href = aboutUrl;
-                            }
-                        }}
-                    >
-                        <span style={{fontSize:16}}>🏆</span>
-                        <div>
-                            <p>{strings.goal}</p>
-                            <p className="goal-hint">{strings.goalHint}</p>
+                    <div className="goal-box">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '1rem' }}>
+                            <a
+                                href={aboutUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'inherit' }}
+                            >
+                                <span style={{fontSize:16}}>🏆</span>
+                                <div>
+                                    <p style={{ margin: 0 }}>{strings.goal}</p>
+                                    <p className="goal-hint" style={{ margin: 0 }}>{strings.goalHint}</p>
+                                </div>
+                            </a>
+                            <button
+                                onClick={() => {
+                                    if (lang === 'en') {
+                                        router.push('/local');
+                                    } else {
+                                        router.push('/local?lang=en');
+                                    }
+                                }}
+                                className="bg-transparent border-none cursor-pointer text-sm font-bold text-slate-600 hover:text-slate-900 whitespace-nowrap p-2"
+                            >
+                                {lang === 'en' ? '日本語に変更' : 'Change to English'}
+                            </button>
                         </div>
                     </div>
                     <div className="steps-grid">
