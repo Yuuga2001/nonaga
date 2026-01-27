@@ -61,6 +61,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     y: number;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
 
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateRef = useRef<string | null>(null);
@@ -446,10 +447,12 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     }
   };
 
-  const handleEndGame = async () => {
-    if (!confirm(strings.confirmEndGame)) {
-      return;
-    }
+  const handleEndGame = () => {
+    setShowEndConfirm(true);
+  };
+
+  const confirmEndGame = async () => {
+    setShowEndConfirm(false);
     try {
       await fetch(`/api/game/${gameId}`, {
         method: 'DELETE',
@@ -543,6 +546,55 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
 
   return (
     <div className={`game-container ${bgClass}`}>
+      {showEndConfirm && (
+        <div className="mode-selector-overlay" onClick={() => setShowEndConfirm(false)}>
+          <div className="mode-selector-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mode-selector-title" style={{marginBottom: '1rem', whiteSpace: 'pre-line', lineHeight: '1.6'}}>
+              {strings.confirmEndGame}
+            </div>
+            <div style={{display: 'flex', gap: '0.75rem', marginTop: '1.5rem'}}>
+              <button
+                onClick={() => setShowEndConfirm(false)}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#e2e8f0',
+                  color: '#475569',
+                  borderRadius: '0.75rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#cbd5e1'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+              >
+                {strings.cancel}
+              </button>
+              <button
+                onClick={confirmEndGame}
+                style={{
+                  flex: 1,
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                  borderRadius: '0.75rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ef4444'}
+              >
+                {strings.confirm}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <header className="header">
         <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
           <h1 className="game-title">Nonaga</h1>
