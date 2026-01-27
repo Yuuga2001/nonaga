@@ -241,7 +241,7 @@ export default function LocalGameClient() {
         setShowModeSelector(false);
 
         if (newMode === 'online') {
-            router.push('/');
+            router.push('/online');
             return;
         }
 
@@ -854,7 +854,7 @@ export default function LocalGameClient() {
                                 </div>
                             </a>
                             <Link
-                                href={lang === 'en' ? '/local' : '/local?lang=en'}
+                                href={lang === 'en' ? '/' : '/?lang=en'}
                                 className="goal-hint"
                                 style={{ cursor: 'pointer', textDecoration: 'underline', alignSelf: 'center' }}
                             >

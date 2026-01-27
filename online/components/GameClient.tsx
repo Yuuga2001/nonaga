@@ -164,7 +164,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
             lastUpdateRef.current = data.updatedAt;
             // Opponent ended the game - redirect to lobby
             if (data.status === 'ABANDONED') {
-              router.push('/');
+              router.push('/online');
               return;
             }
             // Only reset selection when turn changes (opponent made a move)
@@ -443,7 +443,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     } catch (err) {
       console.error('Abandon error:', err);
     }
-    router.push('/');
+    router.push('/online');
   };
 
   const handlePlayAgain = async () => {
@@ -478,7 +478,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     } catch (err) {
       console.error('End game error:', err);
     }
-    router.push('/');
+    router.push('/online');
   };
 
   const toggleLang = () => {
@@ -503,7 +503,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
       <div className="game-container bg-slate">
         <div className="error-container">
           <p className="error-message">{error}</p>
-          <button onClick={() => router.push('/')} className="back-button">
+          <button onClick={() => router.push('/online')} className="back-button">
             {strings.backToLobby}
           </button>
         </div>
@@ -557,7 +557,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         <div className="result-container">
           <div className="result-card">
             <h2>{strings.abandoned}</h2>
-            <button onClick={() => router.push('/')} className="play-again-button">
+            <button onClick={() => router.push('/online')} className="play-again-button">
               {strings.backToLobby}
             </button>
           </div>

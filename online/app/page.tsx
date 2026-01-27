@@ -1,5 +1,23 @@
-import LobbyClient from '@/components/LobbyClient';
+import { Suspense } from 'react';
+import LocalGameClient from '@/components/LocalGameClient';
 
-export default function LobbyPage() {
-  return <LobbyClient />;
+export default function LocalGamePage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh',
+          }}
+        >
+          Loading...
+        </div>
+      }
+    >
+      <LocalGameClient />
+    </Suspense>
+  );
 }

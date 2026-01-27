@@ -136,7 +136,7 @@ export default function LobbyClient() {
                   {strings.joinRoom}
                 </button>
                 <button
-                  onClick={() => router.push('/local')}
+                  onClick={() => router.push('/')}
                   className="lobby-button"
                 >
                   {strings.localMatch}
