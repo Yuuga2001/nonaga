@@ -51,6 +51,64 @@ interface GameClientProps {
   initialGame: GameSession | null;
 }
 
+type PieceMove = {
+  id: string;
+  fromQ: number;
+  fromR: number;
+  toQ: number;
+  toR: number;
+};
+
+type TileMove = {
+  index: number;
+  fromQ: number;
+  fromR: number;
+  toQ: number;
+  toR: number;
+};
+
+function detectPieceMove(prevPieces: Piece[], nextPieces: Piece[]): PieceMove | null {
+  if (prevPieces.length !== nextPieces.length) return null;
+  const nextMap = new Map(nextPieces.map((p) => [p.id, p]));
+  const moved: PieceMove[] = [];
+  for (const prev of prevPieces) {
+    const next = nextMap.get(prev.id);
+    if (!next) return null;
+    if (prev.q !== next.q || prev.r !== next.r) {
+      moved.push({
+        id: prev.id,
+        fromQ: prev.q,
+        fromR: prev.r,
+        toQ: next.q,
+        toR: next.r,
+      });
+    }
+  }
+  return moved.length === 1 ? moved[0] : null;
+}
+
+function detectTileMove(prevTiles: Tile[], nextTiles: Tile[]): TileMove | null {
+  if (prevTiles.length !== nextTiles.length) return null;
+  let movedIndex = -1;
+  for (let i = 0; i < prevTiles.length; i++) {
+    const prev = prevTiles[i];
+    const next = nextTiles[i];
+    if (!prev || !next) return null;
+    if (prev.q !== next.q || prev.r !== next.r) {
+      if (movedIndex !== -1) return null;
+      movedIndex = i;
+    }
+  }
+  if (movedIndex === -1) return null;
+  return {
+    index: movedIndex,
+    fromQ: prevTiles[movedIndex].q,
+    fromR: prevTiles[movedIndex].r,
+    toQ: nextTiles[movedIndex].q,
+    toR: nextTiles[movedIndex].r,
+  };
+}
+
 export default function GameClient({ gameId, initialGame }: GameClientProps) {
   const router = useRouter();
   const [lang, setLang] = useState<Lang>('ja');
@@ -167,10 +225,28 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
               router.push('/online');
               return;
             }
+            if (!game) {
+              setGame(data);
+              return;
+            }
             // Only reset selection when turn changes (opponent made a move)
-            const turnChanged = game?.turn !== data.turn;
+            const turnChanged = game.turn !== data.turn;
             if (turnChanged) {
               setSelectedId(null);
+            }
+            const pieceMove = detectPieceMove(game.pieces, data.pieces);
+            const tileMove = pieceMove ? null : detectTileMove(game.tiles, data.tiles);
+            if (pieceMove) {
+              setIsAnimating(true);
+              isAnimatingRef.current = true;
+              animatePieceMoveRemote(pieceMove, data);
+              return;
+            }
+            if (tileMove) {
+              setIsAnimating(true);
+              isAnimatingRef.current = true;
+              animateTileMoveRemote(tileMove, data);
+              return;
             }
             setGame(data);
           }
@@ -188,7 +264,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         clearInterval(pollingRef.current);
       }
     };
-  }, [game, gameId, router]);
+  }, [game, gameId, router, animatePieceMoveRemote, animateTileMoveRemote]);
 
   // Computed values
   const myColor = useMemo(() => {
@@ -298,8 +374,15 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
   );
 
   // Animation functions
-  const animatePieceMove = useCallback(
-    (pieceId: string, fromQ: number, fromR: number, toQ: number, toR: number) => {
+  const animatePieceMoveBase = useCallback(
+    (
+      pieceId: string,
+      fromQ: number,
+      fromR: number,
+      toQ: number,
+      toR: number,
+      onArrive: () => void
+    ) => {
       const startTime = performance.now();
       const fromPos = hexToPixel(fromQ, fromR);
       const toPos = hexToPixel(toQ, toR);
@@ -321,26 +404,23 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
           // Keep animatingPiece at destination until server confirms the move
           setAnimatingPiece({ id: pieceId, x: toPos.x, y: toPos.y });
           setIsAnimating(false);
-          // Keep isAnimatingRef.current = true until sendMove completes
-          sendMove('piece', pieceId, null, toQ, toR).finally(() => {
-            setAnimatingPiece(null);
-            isAnimatingRef.current = false;
-          });
+          onArrive();
         }
       };
 
       animationFrameRef.current = requestAnimationFrame(animate);
     },
-    [sendMove]
+    []
   );
 
-  const animateTileMove = useCallback(
+  const animateTileMoveBase = useCallback(
     (
       tileIndex: number,
       fromQ: number,
       fromR: number,
       toQ: number,
-      toR: number
+      toR: number,
+      onArrive: () => void
     ) => {
       const startTime = performance.now();
       const fromPos = hexToPixel(fromQ, fromR);
@@ -362,16 +442,79 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         } else {
           setAnimatingTile(null);
           setIsAnimating(false);
-          // Keep isAnimatingRef.current = true until sendMove completes
-          sendMove('tile', null, tileIndex, toQ, toR).finally(() => {
-            isAnimatingRef.current = false;
-          });
+          onArrive();
         }
       };
 
       animationFrameRef.current = requestAnimationFrame(animate);
     },
-    [sendMove]
+    []
+  );
+
+  const animatePieceMoveLocal = useCallback(
+    (pieceId: string, fromQ: number, fromR: number, toQ: number, toR: number) => {
+      animatePieceMoveBase(pieceId, fromQ, fromR, toQ, toR, () => {
+        // Keep isAnimatingRef.current = true until sendMove completes
+        sendMove('piece', pieceId, null, toQ, toR).finally(() => {
+          setAnimatingPiece(null);
+          isAnimatingRef.current = false;
+        });
+      });
+    },
+    [animatePieceMoveBase, sendMove]
+  );
+
+  const animateTileMoveLocal = useCallback(
+    (
+      tileIndex: number,
+      fromQ: number,
+      fromR: number,
+      toQ: number,
+      toR: number
+    ) => {
+      animateTileMoveBase(tileIndex, fromQ, fromR, toQ, toR, () => {
+        // Keep isAnimatingRef.current = true until sendMove completes
+        sendMove('tile', null, tileIndex, toQ, toR).finally(() => {
+          isAnimatingRef.current = false;
+        });
+      });
+    },
+    [animateTileMoveBase, sendMove]
+  );
+
+  const animatePieceMoveRemote = useCallback(
+    (move: PieceMove, nextGame: GameSession) => {
+      animatePieceMoveBase(
+        move.id,
+        move.fromQ,
+        move.fromR,
+        move.toQ,
+        move.toR,
+        () => {
+          setGame(nextGame);
+          setAnimatingPiece(null);
+          isAnimatingRef.current = false;
+        }
+      );
+    },
+    [animatePieceMoveBase]
+  );
+
+  const animateTileMoveRemote = useCallback(
+    (move: TileMove, nextGame: GameSession) => {
+      animateTileMoveBase(
+        move.index,
+        move.fromQ,
+        move.fromR,
+        move.toQ,
+        move.toR,
+        () => {
+          setGame(nextGame);
+          isAnimatingRef.current = false;
+        }
+      );
+    },
+    [animateTileMoveBase]
   );
 
   // Event handlers
@@ -401,7 +544,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
       if (isValidDest) {
         setIsAnimating(true);
         isAnimatingRef.current = true;
-        animatePieceMove(selectedId, piece.q, piece.r, tile.q, tile.r);
+        animatePieceMoveLocal(selectedId, piece.q, piece.r, tile.q, tile.r);
       }
     } else if (
       phase === 'move_tile' &&
@@ -422,7 +565,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
       const tile = tiles[selectedId];
       setIsAnimating(true);
       isAnimatingRef.current = true;
-      animateTileMove(selectedId, tile.q, tile.r, dest.q, dest.r);
+      animateTileMoveLocal(selectedId, tile.q, tile.r, dest.q, dest.r);
     }
   };
 
