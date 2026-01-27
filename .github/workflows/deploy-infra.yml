@@ -1,0 +1,93 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/deploy-infra.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: infra/package-lock.json
+
+      - name: Install dependencies
+        working-directory: infra
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: CDK Bootstrap (if needed)
+        working-directory: infra
+        run: npx cdk bootstrap --require-approval never || true
+
+      - name: CDK Diff
+        working-directory: infra
+        run: |
+          STACK_NAME="NonagaStack-${{ github.event.inputs.environment == 'prod' && 'Prod' || 'Dev' }}"
+          npx cdk diff $STACK_NAME || true
+
+      - name: CDK Deploy
+        working-directory: infra
+        run: |
+          STACK_NAME="NonagaStack-${{ github.event.inputs.environment == 'prod' && 'Prod' || 'Dev' }}"
+          npx cdk deploy $STACK_NAME --require-approval never --outputs-file cdk-outputs.json
+
+      - name: Export outputs
+        id: outputs
+        working-directory: infra
+        run: |
+          STACK_NAME="nonaga-${{ github.event.inputs.environment || 'dev' }}"
+
+          # Read from CDK outputs file
+          if [ -f cdk-outputs.json ]; then
+            cat cdk-outputs.json
+
+            # Extract values (adjust key names based on actual CDK stack id)
+            GRAPHQL_URL=$(cat cdk-outputs.json | jq -r '.[] | .GraphQLApiUrl // empty' | head -1)
+            API_KEY=$(cat cdk-outputs.json | jq -r '.[] | .GraphQLApiKey // empty' | head -1)
+
+            echo "graphql_url=$GRAPHQL_URL" >> $GITHUB_OUTPUT
+            echo "api_key=$API_KEY" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Infrastructure Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** ${{ github.event.inputs.environment || 'dev' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region:** ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **GraphQL URL:** ${{ steps.outputs.outputs.graphql_url }}" >> $GITHUB_STEP_SUMMARY

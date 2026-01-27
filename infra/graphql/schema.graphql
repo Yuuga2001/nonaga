@@ -1,0 +1,84 @@
+type Tile {
+  q: Int!
+  r: Int!
+}
+
+type Piece {
+  id: String!
+  player: String!
+  q: Int!
+  r: Int!
+}
+
+type GameSession {
+  gameId: ID!
+  roomCode: String
+  status: GameStatus!
+  hostPlayerId: String!
+  guestPlayerId: String
+  hostColor: String!
+  tiles: [Tile!]!
+  pieces: [Piece!]!
+  turn: String!
+  phase: String!
+  winner: String
+  victoryLine: [String!]
+  lastMoveAt: AWSDateTime
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+  ttl: Int
+}
+
+enum GameStatus {
+  WAITING
+  PLAYING
+  FINISHED
+  ABANDONED
+}
+
+input TileInput {
+  q: Int!
+  r: Int!
+}
+
+input PieceInput {
+  id: String!
+  player: String!
+  q: Int!
+  r: Int!
+}
+
+input MovePieceInput {
+  gameId: ID!
+  playerId: String!
+  pieceId: String!
+  toQ: Int!
+  toR: Int!
+}
+
+input MoveTileInput {
+  gameId: ID!
+  playerId: String!
+  fromIndex: Int!
+  toQ: Int!
+  toR: Int!
+}
+
+type Query {
+  getGame(gameId: ID!): GameSession
+  getGameByRoomCode(roomCode: String!): GameSession
+}
+
+type Mutation {
+  createGame(hostPlayerId: String!): GameSession!
+  joinGame(gameId: ID!, guestPlayerId: String!): GameSession!
+  movePiece(input: MovePieceInput!): GameSession!
+  moveTile(input: MoveTileInput!): GameSession!
+  abandonGame(gameId: ID!, playerId: String!): GameSession!
+  rematchGame(gameId: ID!, playerId: String!): GameSession!
+}
+
+type Subscription {
+  onGameUpdated(gameId: ID!): GameSession
+    @aws_subscribe(mutations: ["joinGame", "movePiece", "moveTile", "abandonGame", "rematchGame"])
+}

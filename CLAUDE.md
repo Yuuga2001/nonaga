@@ -4,234 +4,183 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-NONAGA is a strategic hexagonal board game implemented as a **single-file HTML application** using vanilla React (loaded via CDN). The game features:
-- 19 hexagonal tiles arranged in a honeycomb pattern
-- 6 pieces (3 red, 3 blue) that slide across the board
-- Two-phase turns: piece movement → tile relocation
-- Victory condition: connect all 3 pieces adjacently
-- Two game modes: Player vs Player (PvP) and AI opponent
-- Japanese language UI with comprehensive SEO optimization
+NONAGA is a strategic hexagonal board game with three game modes:
+- **Local game (vanilla)**: Single-file HTML application (`index.html`) using vanilla React via CDN — PvP and AI modes
+- **Local game (Next.js)**: `/online/app/local/` route with `LocalGameClient.tsx` — PvP and AI modes within Next.js app
+- **Online game**: Next.js 15 + React 19 application (`/online/`) with AWS AppSync for real-time multiplayer, room code matchmaking
+
+Play URLs:
+- Local (vanilla): Served via `index.html` at root (legacy)
+- Local (Next.js): https://nonaga.riverapp.jp/ — root route now serves LocalGameClient
+- Online lobby: https://nonaga.riverapp.jp/online/
+- Local (Next.js, alternate): https://nonaga.riverapp.jp/online/local — duplicate route for backward compatibility
+
+**Matchmaking**: Online games generate a 6-digit room code for easy matchmaking without sharing full URLs
 
 ## Architecture
 
-### Single-File Structure
+### Local Game (Vanilla: `index.html`, `app.jsx`, `app.css`)
 
-The entire game is contained in [index.html](index.html) with four main sections:
-1. **SEO Metadata (lines 1-131)**: Comprehensive meta tags, JSON-LD structured data for search engines
-2. **CSS (lines 135-262)**: Styling with responsive design and animations
-3. **React Components (lines 269-950)**: Game logic, AI opponent, and rendering
-4. **Inline JSX via Babel**: Transpiled in-browser
+Single-file HTML application transpiled via Babel CDN. No build tools required.
+- AI opponent uses position evaluation scoring
+- SVG-based board rendering
 
-This is NOT a traditional React project with build tools—all dependencies load from CDN.
+### Online Game (`/online/`)
+
+Next.js 15 App Router with standalone output (`next.config.js: output: 'standalone'`):
+
+```
+online/
+├── app/
+│   ├── layout.tsx                 # Root layout
+│   ├── page.tsx                   # Root page: LocalGameClient (local game at /)
+│   ├── globals.css                # All styles + animations
+│   ├── online/page.tsx            # Lobby page (moved from root)
+│   ├── local/page.tsx             # Local game route (duplicate for backward compat)
+│   ├── about/page.tsx             # About page (Japanese)
+│   ├── en/about/page.tsx          # About page (English)
+│   ├── game/[gameId]/page.tsx     # Online game page
+│   └── api/game/
+│       ├── route.ts                       # POST: create game
+│       ├── room/[roomCode]/route.ts       # GET: find game by room code
+│       └── [gameId]/
+│           ├── route.ts                   # GET/DELETE: game state
+│           ├── join/route.ts              # POST: join game
+│           ├── move/route.ts              # POST: move piece/tile
+│           └── rematch/route.ts           # POST: request rematch
+├── components/
+│   ├── LobbyClient.tsx            # Game creation UI (~180 lines)
+│   ├── GameClient.tsx             # Online game logic (~700 lines)
+│   ├── LocalGameClient.tsx        # Local game (AI/PvP) (~1350 lines)
+│   └── Board.tsx                  # SVG board rendering (~200 lines, online only)
+├── lib/
+│   ├── gameLogic.ts               # Shared game logic, types, i18n
+│   └── graphql.ts                 # Server-side AppSync client
+└── public/
+    └── about/, en/about/          # Static HTML fallbacks (unused)
+```
+
+**Real-time sync**: Client-side 1-second polling via `GET /api/game/[gameId]`
+
+**Server-side GraphQL**: API routes call AppSync via `lib/graphql.ts` using server-side env vars
+- Queries: `getGame(gameId)`, `getGameByRoomCode(roomCode)`
+- Mutations: `createGame`, `joinGame`, `movePiece`, `moveTile`, `abandonGame`, `rematchGame`
+
+**Routing Structure** (as of recent refactoring):
+- `/` (root): LocalGameClient — local game (AI/PvP) with Next.js
+- `/online`: LobbyClient — create/join online games
+- `/online/local`: LocalGameClient — duplicate route for backward compatibility
+- `/game/[gameId]`: GameClient — online multiplayer game
+- `/about`, `/en/about`: About pages (Japanese/English)
+
+### LocalGameClient vs GameClient
+
+| Feature | LocalGameClient.tsx | GameClient.tsx |
+|---------|---------------------|----------------|
+| Modes | AI + PvP | Online multiplayer |
+| Board rendering | Inline SVG | Uses `Board.tsx` |
+| State sync | Local React state | Polling + API |
+| AI logic | Inline (position evaluation) | N/A |
+| Language | `?lang=en` query param | Browser `document.documentElement.lang` |
+
+### Infrastructure (`/infra/`)
+
+AWS CDK (TypeScript) deploying:
+- **AppSync**: GraphQL API with Lambda + DynamoDB resolvers
+- **DynamoDB**: Game sessions with TTL (24h), GSIs:
+  - `StatusIndex` (status + createdAt) — for listing waiting games
+  - `RoomCodeIndex` (roomCode + createdAt) — for room code lookup
+- **Lambda**: `gameHandler.ts` — validates moves, checks victory, ensures board connectivity
+
+Stack names: `NonagaStack-Dev` / `NonagaStack-Prod`
 
 ### Core Data Structures
 
-**Coordinate System**: Axial coordinates `{q, r}` for hexagonal grid
-- Stored as objects: `{q: number, r: number}`
-- Keys generated as strings: `"q,r"` via `coordsKey()`
+**Coordinate System**: Axial hex coordinates `{q, r}`, keyed as `"q,r"` via `coordsKey()`
 
-**State Management** (React useState hooks):
-```javascript
-tiles: Array<{q, r}>          // 19 tile positions
-pieces: Array<{id, player, q, r}>  // 6 piece positions
+**Game State**:
+```typescript
+gameId: string
+roomCode?: string                       // 6-digit matchmaking code
+tiles: Array<{q, r}>                    // 19 tile positions
+pieces: Array<{id, player, q, r}>       // 6 pieces (3 red, 3 blue)
 turn: 'red' | 'blue'
-phase: 'move_token' | 'move_tile' | 'ended'
-selectedId: string | number | null  // piece ID or tile index
-winner: 'red' | 'blue' | null
-victoryLine: string[]          // coordsKey array
-isAnimating: boolean           // blocks input during animations
-animatingPiece: {id, x, y} | null  // piece animation state
-animatingTile: {index, x, y} | null // tile animation state
-gameMode: 'pvp' | 'ai'        // game mode selection
-aiPlayer: 'red' | 'blue' | null    // which color AI controls
-aiThinking: boolean            // AI computation in progress
-isShuffling: boolean           // shuffle animation for first-player selection
+phase: 'waiting' | 'move_token' | 'move_tile' | 'ended'
+status: 'WAITING' | 'PLAYING' | 'FINISHED' | 'ABANDONED'
+hostPlayerId: string
+guestPlayerId?: string
 ```
-
-**Derived State** (useMemo):
-- `tileMap`: Set of tile coordinate keys for O(1) lookup
-- `pieceMap`: Map of coordinate keys to pieces
-- `viewBounds`: SVG viewBox calculations
-- `validDests`: Legal moves based on current phase/selection
 
 ### Critical Algorithms
 
-#### 1. Slide Movement (lines 471-480)
-Pieces slide in one of 6 hex directions until hitting:
-- Another piece
-- Board edge (missing tile)
+In `online/lib/gameLogic.ts` (frontend) and `infra/lambda/gameHandler.ts` (backend):
 
-Implementation walks the direction vector until no valid tile or piece collision.
-
-#### 2. Connectivity Check (lines 482-492)
-When selecting a tile to move in phase 2:
-- Temporarily remove tile from board
-- BFS from any remaining tile
-- Ensure all N-1 tiles are reachable
-- **Critical**: Prevents board fragmentation
-
-#### 3. Victory Detection (lines 405-411)
-Checks if all 3 pieces of a player are pairwise adjacent:
-- At least 2 of 3 possible adjacency pairs must be true
-- Uses `DIRECTIONS` array to check 6-directional neighbors
-
-#### 4. Piece Animation (lines 413-433)
-Custom easing-based animation using `requestAnimationFrame`:
-- 800ms cubic ease-out
-- Interpolates hex-to-pixel coordinates
-- Blocks further input during animation with `isAnimating` flag
-
-#### 5. AI Opponent (lines 496-769)
-Sophisticated AI using position evaluation:
-- **Phase 1 (Move Token)**: Evaluates all possible piece moves with scoring:
-  - Immediate win: 10000 points
-  - Adjacent pairs formation: 500 points per pair
-  - Minimum distance between pieces: penalty of 30 per unit
-  - Compactness (distance to center of mass): penalty of 20 per unit
-  - Enemy adjacent pairs: penalty of 200 per pair (defensive)
-  - Distance to board center: slight penalty of 5 per unit
-- **Phase 2 (Move Tile)**: Evaluates all valid tile movements:
-  - Blocking enemy victory: 15000 points (highest priority)
-  - Moving enemy piece tiles to disrupt formations: distance-based scoring
-  - Moving own piece tiles closer to allies
-  - Connectivity validation (prevents board fragmentation)
-- 800ms artificial delay for natural feel
-- Blocks user input during AI thinking with `aiThinking` flag
-
-### Coordinate System Details
-
-**Hexagon Layout**: Pointy-top orientation
-- Hex size: 38 units
-- Pixel conversion formula (line 392):
-  ```javascript
-  x = HEX_SIZE * (3/2 * q)
-  y = HEX_SIZE * (√3/2 * q + √3 * r)
-  ```
-
-**Directional Vectors** (line 272):
-```javascript
-[{q:1,r:0}, {q:1,r:-1}, {q:0,r:-1},
- {q:-1,r:0}, {q:-1,r:1}, {q:0,r:1}]
-```
-
-### Initial State
-
-**Tile Layout**: 19 tiles in hexagon shape with 2-tile radius (line 274)
-
-**Piece Positions** (lines 276-283):
-- Red: `(2,-2)`, `(0,2)`, `(-2,0)`
-- Blue: `(2,0)`, `(-2,2)`, `(0,-2)`
-- Arranged at alternating vertices of the outer hexagon
-
-### Game Modes
-
-**PvP Mode**: Two human players take turns on the same device
-
-**AI Mode** (lines 320-789):
-- Random first-player selection with shuffle animation (1.2s)
-- AI automatically plays when it's its turn
-- Evaluation-based move selection (not minimax for performance)
-- Natural delays between moves for better UX
+1. **Slide Movement** (`getSlideDestinations`): Pieces slide in 6 hex directions until hitting piece or board edge
+2. **Connectivity Check** (`isBoardConnected`): BFS ensures board stays connected after tile removal
+3. **Victory Detection** (`getVictoryCoords`): 3 pieces with ≥2 adjacency pairs
+4. **Valid Tile Destinations** (`getValidTileDestinations`): Must touch ≥2 existing tiles
 
 ## Development Commands
 
-**No build system required**. To develop:
-
+### Local Game (Vanilla)
 ```bash
-# Serve locally (any HTTP server works)
-python -m http.server 8000
-# or
-npx serve .
-
-# Open browser to localhost:8000
+npx serve .              # Serve at localhost:3000
+python3 -m http.server   # Alternative: Serve at localhost:8000
 ```
 
-**Testing**: Manual browser testing only (no test framework)
+### Online Frontend
+```bash
+cd online
+npm install
+npm run dev              # Dev server at localhost:3000
+npm run build            # Production build (.next/)
+```
 
-**Linting**: No linter configured (vanilla JavaScript in script tag)
+### Infrastructure
+```bash
+cd infra
+npm install
+npx cdk bootstrap        # First-time setup: prepare AWS environment for CDK
+npm run deploy:dev       # cdk deploy NonagaStack-Dev --require-approval never
+npm run deploy:prod      # cdk deploy NonagaStack-Prod --require-approval never
+npm run diff:dev         # cdk diff NonagaStack-Dev
+npm run diff:prod        # cdk diff NonagaStack-Prod
+npx cdk synth            # Generate CloudFormation template
+```
 
-## Key Implementation Details
+### Environment Variables (Online)
 
-### Phase Management
-- Turn structure enforces strict ordering: move piece → move tile → next player
-- Phase transitions happen in two places:
-  - After piece animation completes (line 429)
-  - After tile placement (lines 449-461, with AI-specific delay)
+Server-side env vars (set in `.env.local` for development or hosting environment for production):
+```
+APPSYNC_ENDPOINT=https://xxx.appsync-api.region.amazonaws.com/graphql
+APPSYNC_API_KEY=da2-xxx
+```
 
-### Selection Behavior
-- `selectedId` is overloaded:
-  - String (piece ID) during `move_token` phase
-  - Number (tile index) during `move_tile` phase
-- Click handling differs by phase:
-  - `handlePieceClick` (line 466)
-  - `handleTileClick` (lines 467-494)
+No `VITE_` prefix — these are Next.js server-side only (used in API routes).
+Note: There is no `.env.example` file in the repository; create `.env.local` manually for local development.
 
-### Mobile Optimization
-- Uses `100dvh` for dynamic viewport height (line 143)
-- `touch-action: none` on board to prevent scroll conflicts (line 204)
-- Safe area insets for iOS notch (lines 164, 250)
-- Viewport meta tag with zoom settings (line 5)
+## Deployment
 
-### Animation Constraints
-- `isAnimating` flag prevents race conditions during both piece and tile animations
-- `animationFrameRef` cleaned up in animation completion callbacks
-- Victory check happens AFTER piece animation completes (line 428)
-- AI turn waits for animations to complete before making next move (line 786)
+### GitHub Actions (`.github/workflows/`)
 
-### Tile Movement Validation
-Two-step validation for tile moves:
-1. **Connectivity**: BFS ensures board remains connected (lines 482-491)
-2. **Adjacency count**: Destination must touch ≥2 tiles (computed in `validDests` at lines 806-813)
+- **`deploy-infra.yml`**: Triggered on `infra/**` changes to `main`. Deploys CDK stack via OIDC auth.
+- **`deploy-frontend.yml`**: Triggered on `online/**` changes to `main`. Fetches AppSync credentials from CloudFormation outputs, builds Next.js.
 
-Both checks prevent invalid game states.
+### AWS Amplify Hosting
 
-### SEO Implementation
-Comprehensive SEO optimization for search engines:
-- **Meta tags**: Open Graph, Twitter Card, language/geo tags (lines 7-49)
-- **JSON-LD structured data**: VideoGame schema with ratings, Game schema (lines 52-131)
-- **Hidden semantic content**: Accessible descriptions for crawlers (lines 926-947)
-- **Accessibility**: Skip links, ARIA labels, semantic HTML (lines 266, 819-864)
+`amplify.yml` configures: `appRoot: online`, builds Next.js, artifacts from `.next/`.
+Environment variables (`APPSYNC_ENDPOINT`, `APPSYNC_API_KEY`) must be set in Amplify Console.
 
 ## Common Pitfalls
 
 1. **Coordinate key consistency**: Always use `coordsKey()` for Map/Set operations
-2. **Phase-dependent selection**: Check `typeof selectedId` to distinguish piece vs tile selection
-3. **Animation blocking**: Never mutate game state during `isAnimating === true` or `aiThinking === true`
-4. **Tile index stability**: Tile array indices change when tiles move—don't cache indices
-5. **BFS starting point**: Always start from `temp[0]` (any remaining tile) in connectivity check
-6. **AI mode checks**: Check `gameMode === 'ai' && turn === aiPlayer` before allowing user input
-7. **Shuffle animation**: Check `isShuffling` flag during game start in AI mode
-8. **Timeout cleanup**: Always clear `shuffleTimeoutRef` in cleanup functions to prevent memory leaks
-
-## Extending the Game
-
-**To add features**:
-- **Undo**: Implement state history stack (capture tiles/pieces/turn/phase snapshots)
-- **Improved AI**: Minimax with alpha-beta pruning (current AI uses evaluation only)
-- **Difficulty levels**: Adjust AI scoring weights for easy/medium/hard
-- **Online multiplayer**: Extract state to JSON, sync via WebSocket
-- **Mobile app**: Wrap in React Native WebView or rebuild with native hex rendering
-- **Move hints**: Show suggested moves for beginners
-- **Game replay**: Record and playback games from move history
-
-**Architecture migration path**:
-If converting to a proper React app:
-1. Extract game logic to custom hooks (`useGameState.js`, `useAI.js`)
-2. Separate components: `Board.jsx`, `Piece.jsx`, `Tile.jsx`, `StatusBar.jsx`, `ShuffleAnimation.jsx`, `Confetti.jsx`
-3. Move constants to `constants.js` (DIRECTIONS, HEX_SIZE, INITIAL_TILES, INITIAL_PIECES)
-4. Extract AI logic to separate module (`ai.js` or `aiEngine.js`)
-5. Add Vite/Next.js build system
-6. Replace CDN React with npm packages
-
-## Game Rules Summary
-
-**Turn sequence**:
-1. Select your piece → click destination (slides to edge)
-2. Select empty tile → click new position (must touch ≥2 tiles, keep board connected)
-
-**Win condition**: Your 3 pieces form any connected shape (line, triangle, or V-shape)
-
-**Edge cases**:
-- Cannot move tile if it would split the board
-- Cannot skip tile movement phase
-- Pieces can't slide to current position (no valid destination)
+2. **Animation blocking**: Never mutate game state during `isAnimating === true`
+3. **Board connectivity**: Always validate tile moves with `isBoardConnected()` before allowing
+4. **Duplicate game logic**: Move validation exists in both `infra/lambda/gameHandler.ts` (authoritative) and `online/lib/gameLogic.ts` (UI feedback) — keep in sync
+5. **Polling vs subscriptions**: Client uses polling; AppSync subscriptions exist in schema but are not used
+6. **Player ID**: UUID stored in localStorage; clearing it creates a new player identity
+7. **Move retry**: `GameClient.tsx` retries failed moves up to 3 times with 500ms delay
+8. **useSearchParams requires Suspense**: `LocalGameClient.tsx` uses `useSearchParams()` which requires wrapping in `<Suspense>` in the page component
+9. **LocalGameClient renders its own SVG**: Unlike GameClient which uses Board.tsx, LocalGameClient renders the board inline (faithful port of app.jsx)
+10. **Room code validation**: Room codes are 6 digits; client validates format and strips non-numeric characters before API calls
+11. **Duplicate routes**: `/` and `/online/local` both render LocalGameClient; root was recently changed from lobby to local game for better UX

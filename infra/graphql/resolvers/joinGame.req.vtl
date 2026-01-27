@@ -1,0 +1,25 @@
+#set($now = $util.time.nowISO8601())
+
+{
+  "version": "2018-05-29",
+  "operation": "UpdateItem",
+  "key": {
+    "gameId": $util.dynamodb.toDynamoDBJson($ctx.args.gameId)
+  },
+  "update": {
+    "expression": "SET guestPlayerId = :guestPlayerId, #status = :status, phase = :phase, updatedAt = :updatedAt",
+    "expressionNames": {
+      "#status": "status"
+    },
+    "expressionValues": {
+      ":guestPlayerId": $util.dynamodb.toDynamoDBJson($ctx.args.guestPlayerId),
+      ":status": $util.dynamodb.toDynamoDBJson("PLAYING"),
+      ":phase": $util.dynamodb.toDynamoDBJson("move_token"),
+      ":updatedAt": $util.dynamodb.toDynamoDBJson($now),
+      ":waitingStatus": $util.dynamodb.toDynamoDBJson("WAITING")
+    }
+  },
+  "condition": {
+    "expression": "#status = :waitingStatus"
+  }
+}

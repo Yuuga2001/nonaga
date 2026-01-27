@@ -1,0 +1,19 @@
+#set($now = $util.time.nowISO8601())
+
+{
+  "version": "2018-05-29",
+  "operation": "UpdateItem",
+  "key": {
+    "gameId": $util.dynamodb.toDynamoDBJson($ctx.args.gameId)
+  },
+  "update": {
+    "expression": "SET #status = :status, updatedAt = :updatedAt",
+    "expressionNames": {
+      "#status": "status"
+    },
+    "expressionValues": {
+      ":status": $util.dynamodb.toDynamoDBJson("ABANDONED"),
+      ":updatedAt": $util.dynamodb.toDynamoDBJson($now)
+    }
+  }
+}

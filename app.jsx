@@ -21,6 +21,8 @@
                 playAgain: 'もう一度あそぶ',
                 pvp: 'ふたりで対戦',
                 aiMode: 'AI対戦モード',
+                onlineMode: 'オンライン対戦',
+                selectMode: 'モード選択',
                 thinking: '🤖 AI思考中...',
                 phaseMoveToken: '1. コマを滑らせる',
                 phaseMoveTile: '2. タイルを動かす',
@@ -47,6 +49,8 @@
                 playAgain: 'Play again',
                 pvp: '2-Player',
                 aiMode: 'Play vs AI',
+                onlineMode: 'Online Battle',
+                selectMode: 'Select Mode',
                 thinking: '🤖 AI thinking...',
                 phaseMoveToken: '1. Slide a piece',
                 phaseMoveTile: '2. Move a tile',
@@ -101,6 +105,39 @@
             );
         };
 
+        const ModeSelector = ({ strings, currentMode, onSelect, onClose }) => {
+            return (
+                <div className="mode-selector-overlay" onClick={onClose}>
+                    <div className="mode-selector-modal" onClick={(e) => e.stopPropagation()}>
+                        <h2 className="mode-selector-title">{strings.selectMode}</h2>
+                        <div className="mode-selector-options">
+                            <button
+                                className={`mode-option ${currentMode === 'ai' ? 'active' : ''}`}
+                                onClick={() => onSelect('ai')}
+                            >
+                                <span className="mode-icon">🤖</span>
+                                <span className="mode-label">{strings.aiMode}</span>
+                            </button>
+                            <button
+                                className={`mode-option ${currentMode === 'pvp' ? 'active' : ''}`}
+                                onClick={() => onSelect('pvp')}
+                            >
+                                <span className="mode-icon">👥</span>
+                                <span className="mode-label">{strings.pvp}</span>
+                            </button>
+                            <button
+                                className="mode-option online"
+                                onClick={() => onSelect('online')}
+                            >
+                                <span className="mode-icon">🌐</span>
+                                <span className="mode-label">{strings.onlineMode}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const NonagaGame = () => {
             const strings = STRINGS;
             const [tiles, setTiles] = useState(INITIAL_TILES);
@@ -117,9 +154,11 @@
             const [aiPlayer, setAiPlayer] = useState(() => Math.random() < 0.5 ? 'red' : 'blue'); // 'red' or 'blue'
             const [aiThinking, setAiThinking] = useState(false);
             const [isShuffling, setIsShuffling] = useState(true); // 初回はシャッフル表示
+            const [showModeSelector, setShowModeSelector] = useState(false);
             const animationFrameRef = useRef(null);
             const shuffleTimeoutRef = useRef(null);
             const aboutUrl = LANG === 'en' ? '/en/about/' : '/about/';
+            const onlineUrl = '/online/';
 
             const resetGame = () => {
                 // タイマーをクリア
@@ -150,13 +189,23 @@
                 }
             };
 
-            const switchMode = () => {
+            const handleModeSelect = (newMode) => {
+                setShowModeSelector(false);
+
+                // オンラインモードの場合は別ページに遷移
+                if (newMode === 'online') {
+                    window.location.href = onlineUrl;
+                    return;
+                }
+
+                // 同じモードなら何もしない
+                if (newMode === gameMode) return;
+
                 // タイマーをクリア
                 if (shuffleTimeoutRef.current) {
                     clearTimeout(shuffleTimeoutRef.current);
                 }
 
-                const newMode = gameMode === 'pvp' ? 'ai' : 'pvp';
                 setGameMode(newMode);
 
                 setTiles(INITIAL_TILES);
@@ -615,6 +664,14 @@
             return (
                 <div id="main-content" className={`game-container ${winner === 'red' ? 'bg-rose' : winner === 'blue' ? 'bg-indigo' : 'bg-slate'}`}>
                     {winner && <Confetti winner={winner} />}
+                    {showModeSelector && (
+                        <ModeSelector
+                            strings={strings}
+                            currentMode={gameMode}
+                            onSelect={handleModeSelect}
+                            onClose={() => setShowModeSelector(false)}
+                        />
+                    )}
                     <header className="header" role="banner">
                         <h1 className="game-title">Nonaga</h1>
                     </header>
@@ -645,7 +702,7 @@
                                             {gameMode === 'ai' ? (aiPlayer === 'blue' ? strings.ai : strings.you) : strings.playerBlue}
                                         </div>
                                     </div>
-                                    <button onClick={switchMode} className={`mode-button ${gameMode === 'ai' ? 'ai' : ''}`} disabled={isAnimating || aiThinking}>
+                                    <button onClick={() => setShowModeSelector(true)} className={`mode-button ${gameMode === 'ai' ? 'ai' : ''}`} disabled={isAnimating || aiThinking}>
                                         {gameMode === 'pvp' ? strings.pvp : strings.aiMode}
                                     </button>
                                 </div>

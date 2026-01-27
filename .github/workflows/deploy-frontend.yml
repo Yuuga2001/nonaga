@@ -1,0 +1,92 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'online/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-1
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: online/package-lock.json
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get CDK Outputs
+        id: cdk-outputs
+        run: |
+          STACK_NAME="nonaga-prod"
+
+          # Get GraphQL endpoint
+          ENDPOINT=$(aws cloudformation describe-stacks \
+            --stack-name $STACK_NAME \
+            --query 'Stacks[0].Outputs[?OutputKey==`GraphQLApiUrl`].OutputValue' \
+            --output text 2>/dev/null || echo "")
+
+          # Get API Key
+          API_KEY=$(aws cloudformation describe-stacks \
+            --stack-name $STACK_NAME \
+            --query 'Stacks[0].Outputs[?OutputKey==`GraphQLApiKey`].OutputValue' \
+            --output text 2>/dev/null || echo "")
+
+          # Use secrets as fallback if stack not deployed yet
+          if [ -z "$ENDPOINT" ] || [ "$ENDPOINT" == "None" ]; then
+            ENDPOINT="${{ secrets.VITE_APPSYNC_ENDPOINT }}"
+          fi
+          if [ -z "$API_KEY" ] || [ "$API_KEY" == "None" ]; then
+            API_KEY="${{ secrets.VITE_APPSYNC_API_KEY }}"
+          fi
+
+          echo "endpoint=$ENDPOINT" >> $GITHUB_OUTPUT
+          echo "api_key=$API_KEY" >> $GITHUB_OUTPUT
+
+      - name: Install dependencies
+        working-directory: online
+        run: npm ci
+
+      - name: Build
+        working-directory: online
+        env:
+          VITE_APPSYNC_ENDPOINT: ${{ steps.cdk-outputs.outputs.endpoint }}
+          VITE_APPSYNC_API_KEY: ${{ steps.cdk-outputs.outputs.api_key }}
+          VITE_AWS_REGION: ${{ env.AWS_REGION }}
+        run: npm run build
+
+      - name: Deploy to S3 (for Amplify)
+        run: |
+          # Amplify will pick up the built files from the repository
+          # This step is for verification
+          echo "Build completed successfully"
+          ls -la online/dist/
+
+      - name: Summary
+        run: |
+          echo "## Frontend Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Output:** online/dist/" >> $GITHUB_STEP_SUMMARY
+          echo "- **GraphQL Endpoint:** ${{ steps.cdk-outputs.outputs.endpoint }}" >> $GITHUB_STEP_SUMMARY

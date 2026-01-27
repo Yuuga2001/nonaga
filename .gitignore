@@ -9,3 +9,23 @@
 # Temporary files
 *.log
 *.tmp
+
+# Dependencies
+node_modules/
+
+# Build outputs
+online/dist/
+online/.next/
+online/.vite/
+online-dist/
+infra/dist/
+infra/cdk.out/
+*.js.map
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# CDK
+cdk-outputs.json

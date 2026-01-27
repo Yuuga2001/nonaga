@@ -1,0 +1,52 @@
+#set($gameId = $util.autoId())
+#set($now = $util.time.nowISO8601())
+#set($ttl = $util.time.nowEpochSeconds() + 86400)
+## Randomly assign host color
+#set($hostColor = "red")
+#if($util.math.randomWithinRange(0, 1) == 1)
+  #set($hostColor = "blue")
+#end
+
+## Initial tiles (19 hexagonal tiles)
+#set($tiles = [
+  {"q": 0, "r": 0},
+  {"q": 1, "r": 0}, {"q": -1, "r": 0},
+  {"q": 0, "r": 1}, {"q": 0, "r": -1},
+  {"q": 1, "r": -1}, {"q": -1, "r": 1},
+  {"q": 2, "r": 0}, {"q": -2, "r": 0},
+  {"q": 0, "r": 2}, {"q": 0, "r": -2},
+  {"q": 2, "r": -1}, {"q": -2, "r": 1},
+  {"q": 1, "r": 1}, {"q": -1, "r": -1},
+  {"q": 2, "r": -2}, {"q": -2, "r": 2},
+  {"q": 1, "r": -2}, {"q": -1, "r": 2}
+])
+
+## Initial pieces (6 pieces: 3 red, 3 blue)
+#set($pieces = [
+  {"id": "r1", "player": "red", "q": 2, "r": -2},
+  {"id": "r2", "player": "red", "q": 0, "r": 2},
+  {"id": "r3", "player": "red", "q": -2, "r": 0},
+  {"id": "b1", "player": "blue", "q": 2, "r": 0},
+  {"id": "b2", "player": "blue", "q": -2, "r": 2},
+  {"id": "b3", "player": "blue", "q": 0, "r": -2}
+])
+
+{
+  "version": "2018-05-29",
+  "operation": "PutItem",
+  "key": {
+    "gameId": $util.dynamodb.toDynamoDBJson($gameId)
+  },
+  "attributeValues": {
+    "status": $util.dynamodb.toDynamoDBJson("WAITING"),
+    "hostPlayerId": $util.dynamodb.toDynamoDBJson($ctx.args.hostPlayerId),
+    "hostColor": $util.dynamodb.toDynamoDBJson($hostColor),
+    "tiles": $util.dynamodb.toDynamoDBJson($tiles),
+    "pieces": $util.dynamodb.toDynamoDBJson($pieces),
+    "turn": $util.dynamodb.toDynamoDBJson("red"),
+    "phase": $util.dynamodb.toDynamoDBJson("waiting"),
+    "createdAt": $util.dynamodb.toDynamoDBJson($now),
+    "updatedAt": $util.dynamodb.toDynamoDBJson($now),
+    "ttl": $util.dynamodb.toDynamoDBJson($ttl)
+  }
+}

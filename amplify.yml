@@ -1,0 +1,22 @@
+version: 1
+applications:
+  - appRoot: online
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm install
+        build:
+          commands:
+            - echo "APPSYNC_ENDPOINT=$APPSYNC_ENDPOINT" >> .env.production
+            - echo "APPSYNC_API_KEY=$APPSYNC_API_KEY" >> .env.production
+            - cat .env.production
+            - npm run build
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+          - .next/cache/**/*
