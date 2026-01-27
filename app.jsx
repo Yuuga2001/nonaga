@@ -21,7 +21,6 @@
                 playAgain: 'もう一度あそぶ',
                 pvp: 'ふたりで対戦',
                 aiMode: 'AI対戦モード',
-                onlineMode: 'オンライン対戦',
                 selectMode: 'モード選択',
                 thinking: '🤖 AI思考中...',
                 phaseMoveToken: '1. コマを滑らせる',
@@ -49,7 +48,6 @@
                 playAgain: 'Play again',
                 pvp: '2-Player',
                 aiMode: 'Play vs AI',
-                onlineMode: 'Online Battle',
                 selectMode: 'Select Mode',
                 thinking: '🤖 AI thinking...',
                 phaseMoveToken: '1. Slide a piece',
@@ -125,13 +123,6 @@
                                 <span className="mode-icon">👥</span>
                                 <span className="mode-label">{strings.pvp}</span>
                             </button>
-                            <button
-                                className="mode-option online"
-                                onClick={() => onSelect('online')}
-                            >
-                                <span className="mode-icon">🌐</span>
-                                <span className="mode-label">{strings.onlineMode}</span>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -158,7 +149,6 @@
             const animationFrameRef = useRef(null);
             const shuffleTimeoutRef = useRef(null);
             const aboutUrl = LANG === 'en' ? '/en/about/' : '/about/';
-            const onlineUrl = '/online/';
 
             const resetGame = () => {
                 // タイマーをクリア
@@ -191,12 +181,6 @@
 
             const handleModeSelect = (newMode) => {
                 setShowModeSelector(false);
-
-                // オンラインモードの場合は別ページに遷移
-                if (newMode === 'online') {
-                    window.location.href = onlineUrl;
-                    return;
-                }
 
                 // 同じモードなら何もしない
                 if (newMode === gameMode) return;
