@@ -744,9 +744,7 @@ export default function LocalGameClient() {
             </header>
 
             <div className="status-container">
-                {isShuffling && gameMode === 'ai' ? (
-                    <ShuffleAnimation strings={strings} />
-                ) : winner ? (
+                {winner ? (
                     <div className="victory-container">
                         <div className={`victory-badge ${winner}`}><span style={{fontSize:20, fontWeight:900}}>
                             {gameMode === 'ai'
@@ -780,7 +778,19 @@ export default function LocalGameClient() {
                 )}
             </div>
 
-            <div className="board-container" role="application" aria-label={strings.boardLabel}>
+            <div className="board-container" role="application" aria-label={strings.boardLabel} style={{position: 'relative'}}>
+                {isShuffling && gameMode === 'ai' && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        zIndex: 50,
+                        pointerEvents: 'none'
+                    }}>
+                        <ShuffleAnimation strings={strings} />
+                    </div>
+                )}
                 <svg viewBox={`${viewBounds.x} ${viewBounds.y} ${viewBounds.w} ${viewBounds.h}`} className="board-svg" role="img" aria-label={strings.boardSvgLabel}>
                     <defs>
                         <filter id="selected-glow" x="-100%" y="-100%" width="300%" height="300%">
