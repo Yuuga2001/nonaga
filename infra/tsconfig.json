@@ -23,6 +23,6 @@
     "resolveJsonModule": true,
     "esModuleInterop": true
   },
-  "include": ["bin/**/*", "lib/**/*"],
+  "include": ["bin/**/*", "lib/**/*", "lambda/**/*"],
   "exclude": ["node_modules", "dist"]
 }
