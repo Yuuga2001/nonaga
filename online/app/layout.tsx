@@ -2,9 +2,9 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 
 export const metadata: Metadata = {
-  title: 'NONAGA オンライン対戦 - 六角形ボードゲーム',
+  title: 'NONAGA Online - Hexagonal Board Game',
   description:
-    'NONAGAオンライン対戦。友達とリアルタイムで六角形ボードゲームを楽しもう。',
+    'Play NONAGA online. Enjoy this strategic hexagonal board game with friends in real-time.',
 };
 
 export const viewport: Viewport = {
@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ja">
+    <html lang="en">
       <body>{children}</body>
     </html>
   );

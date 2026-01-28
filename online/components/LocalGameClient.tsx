@@ -20,9 +20,9 @@ const INITIAL_PIECES = [
 ];
 
 const getLang = () => {
-    if (typeof window === 'undefined') return 'ja';
-    const lang = (document.documentElement.lang || 'ja').toLowerCase();
-    return lang.startsWith('en') ? 'en' : 'ja';
+    if (typeof window === 'undefined') return 'en';
+    const lang = (document.documentElement.lang || 'en').toLowerCase();
+    return lang.startsWith('ja') ? 'ja' : 'en';
 };
 
 const I18N = {
@@ -184,8 +184,8 @@ export default function LocalGameClient() {
 
     useEffect(() => {
         const langParam = searchParams.get('lang');
-        if (langParam === 'en') {
-            setLang('en');
+        if (langParam === 'ja') {
+            setLang('ja');
         } else {
             setLang(getLang() as 'ja' | 'en');
         }
@@ -842,11 +842,11 @@ export default function LocalGameClient() {
                     <div className="goal-box">
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', gap: '0.5rem' }}>
                             <Link
-                                href={lang === 'en' ? '/' : '/?lang=en'}
+                                href={lang === 'ja' ? '/' : '/?lang=ja'}
                                 className="goal-hint"
                                 style={{ cursor: 'pointer', textDecoration: 'underline' }}
                             >
-                                {lang === 'en' ? '日本語に変更' : 'Change to English'}
+                                {lang === 'ja' ? 'Change to English' : '日本語に変更'}
                             </Link>
                             <a
                                 href={aboutUrl}

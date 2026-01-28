@@ -34,10 +34,10 @@ type Lang = 'ja' | 'en';
 const LANG_KEY = 'nonaga_lang';
 
 function readLang(): Lang {
-  if (typeof window === 'undefined') return 'ja';
+  if (typeof window === 'undefined') return 'en';
   const stored = localStorage.getItem(LANG_KEY);
-  const lang = (stored || document.documentElement.lang || 'ja').toLowerCase();
-  return lang.startsWith('en') ? 'en' : 'ja';
+  const lang = (stored || document.documentElement.lang || 'en').toLowerCase();
+  return lang.startsWith('ja') ? 'ja' : 'en';
 }
 
 function persistLang(next: Lang) {
