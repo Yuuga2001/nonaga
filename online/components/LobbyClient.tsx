@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { I18N, type I18NStrings } from '@/lib/gameLogic';
+import { I18N, type I18NStrings, type Lang, readLang, persistLang } from '@/lib/gameLogic';
 
 function getPlayerId(): string {
   if (typeof window === 'undefined') return '';
@@ -14,23 +14,6 @@ function getPlayerId(): string {
   return id;
 }
 
-type Lang = 'ja' | 'en';
-
-const LANG_KEY = 'nonaga_lang';
-
-function readLang(): Lang {
-  if (typeof window === 'undefined') return 'en';
-  const stored = localStorage.getItem(LANG_KEY);
-  const lang = (stored || document.documentElement.lang || 'en').toLowerCase();
-  return lang.startsWith('ja') ? 'ja' : 'en';
-}
-
-function persistLang(next: Lang) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(LANG_KEY, next);
-  document.documentElement.lang = next;
-}
-
 export default function LobbyClient() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -38,7 +21,7 @@ export default function LobbyClient() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'main' | 'join'>('main');
   const [roomCode, setRoomCode] = useState('');
-  const [lang, setLang] = useState<Lang>('ja');
+  const [lang, setLang] = useState<Lang>('en');
   const strings = useMemo<I18NStrings>(() => I18N[lang], [lang]);
 
   useEffect(() => {

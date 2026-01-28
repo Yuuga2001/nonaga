@@ -253,6 +253,24 @@ export function calculateViewBounds(tiles: Tile[]): {
   };
 }
 
+// Language utilities
+export type Lang = 'ja' | 'en';
+
+const LANG_KEY = 'nonaga_lang';
+
+export function readLang(): Lang {
+  if (typeof window === 'undefined') return 'en';
+  const stored = localStorage.getItem(LANG_KEY);
+  const lang = (stored || document.documentElement.lang || 'en').toLowerCase();
+  return lang.startsWith('ja') ? 'ja' : 'en';
+}
+
+export function persistLang(next: Lang): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(LANG_KEY, next);
+  document.documentElement.lang = next;
+}
+
 // i18n strings
 export const I18N = {
   ja: {

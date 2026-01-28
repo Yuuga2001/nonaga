@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { type Lang, readLang, persistLang } from '@/lib/gameLogic';
 
 const HEX_SIZE = 38;
 const DIRECTIONS = [{q:1,r:0},{q:1,r:-1},{q:0,r:-1},{q:-1,r:0},{q:-1,r:1},{q:0,r:1}];
@@ -17,23 +18,6 @@ const INITIAL_PIECES = [
     { id: 'r3', player: 'red' as const,  q: -2, r: 0  },
     { id: 'b3', player: 'blue' as const, q: 0,  r: -2 }
 ];
-
-type Lang = 'ja' | 'en';
-
-const LANG_KEY = 'nonaga_lang';
-
-function readLang(): Lang {
-    if (typeof window === 'undefined') return 'en';
-    const stored = localStorage.getItem(LANG_KEY);
-    const lang = (stored || document.documentElement.lang || 'en').toLowerCase();
-    return lang.startsWith('ja') ? 'ja' : 'en';
-}
-
-function persistLang(next: Lang) {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(LANG_KEY, next);
-    document.documentElement.lang = next;
-}
 
 const I18N = {
     ja: {

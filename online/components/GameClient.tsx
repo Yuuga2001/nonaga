@@ -10,6 +10,7 @@ import {
   type Tile,
   type Piece,
   type PlayerColor,
+  type Lang,
   coordsKey,
   hexToPixel,
   calculateViewBounds,
@@ -17,6 +18,8 @@ import {
   isBoardConnected,
   getValidTileDestinations,
   getPlayerColor,
+  readLang,
+  persistLang,
 } from '@/lib/gameLogic';
 
 function getPlayerId(): string {
@@ -27,23 +30,6 @@ function getPlayerId(): string {
     localStorage.setItem('nonaga_player_id', id);
   }
   return id;
-}
-
-type Lang = 'ja' | 'en';
-
-const LANG_KEY = 'nonaga_lang';
-
-function readLang(): Lang {
-  if (typeof window === 'undefined') return 'en';
-  const stored = localStorage.getItem(LANG_KEY);
-  const lang = (stored || document.documentElement.lang || 'en').toLowerCase();
-  return lang.startsWith('ja') ? 'ja' : 'en';
-}
-
-function persistLang(next: Lang) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(LANG_KEY, next);
-  document.documentElement.lang = next;
 }
 
 interface GameClientProps {
@@ -111,7 +97,7 @@ function detectTileMove(prevTiles: Tile[], nextTiles: Tile[]): TileMove | null {
 
 export default function GameClient({ gameId, initialGame }: GameClientProps) {
   const router = useRouter();
-  const [lang, setLang] = useState<Lang>('ja');
+  const [lang, setLang] = useState<Lang>('en');
   const strings = useMemo<I18NStrings>(() => I18N[lang], [lang]);
   const [playerId, setPlayerId] = useState<string>('');
   const [game, setGame] = useState<GameSession | null>(initialGame);
