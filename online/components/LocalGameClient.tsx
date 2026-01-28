@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 const HEX_SIZE = 38;
 const DIRECTIONS = [{q:1,r:0},{q:1,r:-1},{q:0,r:-1},{q:-1,r:0},{q:-1,r:1},{q:0,r:1}];
@@ -19,11 +18,22 @@ const INITIAL_PIECES = [
     { id: 'b3', player: 'blue' as const, q: 0,  r: -2 }
 ];
 
-const getLang = () => {
+type Lang = 'ja' | 'en';
+
+const LANG_KEY = 'nonaga_lang';
+
+function readLang(): Lang {
     if (typeof window === 'undefined') return 'en';
-    const lang = (document.documentElement.lang || 'en').toLowerCase();
+    const stored = localStorage.getItem(LANG_KEY);
+    const lang = (stored || document.documentElement.lang || 'en').toLowerCase();
     return lang.startsWith('ja') ? 'ja' : 'en';
-};
+}
+
+function persistLang(next: Lang) {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(LANG_KEY, next);
+    document.documentElement.lang = next;
+}
 
 const I18N = {
     ja: {
@@ -178,18 +188,20 @@ const ModeSelector = ({ strings, currentMode, onSelect, onClose }: {
 
 export default function LocalGameClient() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const [lang, setLang] = useState<'ja' | 'en'>('ja');
+    const [lang, setLang] = useState<Lang>('en');
     const strings = I18N[lang];
 
     useEffect(() => {
-        const langParam = searchParams.get('lang');
-        if (langParam === 'ja') {
-            setLang('ja');
-        } else {
-            setLang(getLang() as 'ja' | 'en');
-        }
-    }, [searchParams]);
+        setLang(readLang());
+    }, []);
+
+    useEffect(() => {
+        persistLang(lang);
+    }, [lang]);
+
+    const toggleLang = () => {
+        setLang((prev: Lang) => (prev === 'en' ? 'ja' : 'en'));
+    };
 
     const [tiles, setTiles] = useState<Tile[]>(INITIAL_TILES);
     const [pieces, setPieces] = useState<Piece[]>(INITIAL_PIECES);
@@ -841,13 +853,21 @@ export default function LocalGameClient() {
                 <div className="rules-card">
                     <div className="goal-box">
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', gap: '0.5rem' }}>
-                            <Link
-                                href={lang === 'ja' ? '/' : '/?lang=ja'}
+                            <button
+                                onClick={toggleLang}
                                 className="goal-hint"
-                                style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                                style={{
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline',
+                                    background: 'none',
+                                    border: 'none',
+                                    padding: 0,
+                                    font: 'inherit',
+                                    color: 'inherit'
+                                }}
                             >
-                                {lang === 'ja' ? 'Change to English' : '日本語に変更'}
-                            </Link>
+                                {lang === 'en' ? '日本語に変更' : 'Change to English'}
+                            </button>
                             <a
                                 href={aboutUrl}
                                 target="_blank"
