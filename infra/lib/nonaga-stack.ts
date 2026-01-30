@@ -40,7 +40,7 @@ export class NonagaStack extends cdk.Stack {
 
     // Lambda function for game logic
     const gameHandler = new nodejs.NodejsFunction(this, 'GameHandler', {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       handler: 'handler',
       entry: path.join(__dirname, '../lambda/gameHandler.ts'),
       environment: {
