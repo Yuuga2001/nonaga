@@ -63,6 +63,34 @@ export default function AppLandingPage() {
         <p>{t.victoryDesc}</p>
       </section>
 
+      <section style={{ marginBottom: '2.5rem' }}>
+        <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem' }}>{t.playTitle}</h2>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <a
+            href="https://apps.apple.com/app/hexlide/id0000000000"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+              background: '#000', color: '#fff', fontWeight: 700,
+              fontSize: '1rem', padding: '0.85rem 1.5rem',
+              borderRadius: '12px', textDecoration: 'none',
+            }}
+          >
+            <span style={{ fontSize: '1.3rem' }}>🍎</span> {t.iosButton}
+          </a>
+          <Link
+            href="/"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', fontWeight: 700,
+              fontSize: '1rem', padding: '0.85rem 1.5rem',
+              borderRadius: '12px', textDecoration: 'none',
+            }}
+          >
+            <span style={{ fontSize: '1.3rem' }}>🌐</span> {t.webButton}
+          </Link>
+        </div>
+      </section>
+
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '2rem' }}>
         <Link href="/app/privacy" style={{ color: '#4f46e5', fontSize: '0.9rem' }}>{t.privacy}</Link>
         <Link href="/app/contact" style={{ color: '#4f46e5', fontSize: '0.9rem' }}>{t.contact}</Link>
@@ -92,6 +120,9 @@ const EN = {
   ],
   victoryTitle: 'Win Condition',
   victoryDesc: 'Connect your three pieces in any adjacent formation — a line, triangle, or V-shape.',
+  playTitle: 'Play Hexlide',
+  iosButton: 'App Store',
+  webButton: 'Play in Browser',
   privacy: 'Privacy Policy',
   contact: 'Contact Us',
   howToPlayLink: 'How to Play',
@@ -117,6 +148,9 @@ const JA = {
   ],
   victoryTitle: '勝利条件',
   victoryDesc: '自分の3つのコマすべてが隣接した状態（線状、三角形、V字など）を作ると勝利です。',
+  playTitle: 'Hexlideをプレイ',
+  iosButton: 'App Store',
+  webButton: 'ブラウザでプレイ',
   privacy: 'プライバシーポリシー',
   contact: 'お問い合わせ',
   howToPlayLink: '遊び方',
