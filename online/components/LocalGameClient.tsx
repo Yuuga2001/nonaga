@@ -42,9 +42,9 @@ const I18N = {
         slideToEdge: '端までコマを滑らせる',
         moveEmptyTile: '空きタイルを移動する',
         rulesLabel: 'ゲームルール',
-        boardLabel: 'NONAGA ゲームボード',
+        boardLabel: 'Hexlide ゲームボード',
         boardSvgLabel: '六角形タイルとコマのゲームボード',
-        mainLabel: 'NONAGA ゲーム盤面',
+        mainLabel: 'Hexlide ゲーム盤面',
         alertBoardSplit: '盤面を分断できません',
         playerRed: '赤',
         playerBlue: '青'
@@ -71,9 +71,9 @@ const I18N = {
         slideToEdge: 'Slide a piece to the edge',
         moveEmptyTile: 'Move an empty tile',
         rulesLabel: 'Rules',
-        boardLabel: 'NONAGA game board',
+        boardLabel: 'Hexlide game board',
         boardSvgLabel: 'Hex tiles and pieces board',
-        mainLabel: 'NONAGA game area',
+        mainLabel: 'Hexlide game area',
         alertBoardSplit: 'You cannot split the board.',
         playerRed: 'Red',
         playerBlue: 'Blue'

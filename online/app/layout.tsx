@@ -2,9 +2,9 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 
 export const metadata: Metadata = {
-  title: 'NONAGA Online - Hexagonal Board Game',
+  title: 'Hexlide Online - Hexagonal Board Game',
   description:
-    'Play NONAGA online. Enjoy this strategic hexagonal board game with friends in real-time.',
+    'Play Hexlide online. Enjoy this strategic hexagonal board game with friends in real-time.',
 };
 
 export const viewport: Viewport = {

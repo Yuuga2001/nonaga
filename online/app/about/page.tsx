@@ -2,20 +2,20 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'NONAGAについて | 盤面が動く六角戦略ボードゲーム',
-  description: 'NONAGAは盤面そのものを動かせる六角戦略ボードゲーム。ルール、遊び方、勝利条件を紹介します。',
+  title: 'Hexlideについて | 盤面が動く六角戦略ボードゲーム',
+  description: 'Hexlideは盤面そのものを動かせる六角戦略ボードゲーム。ルール、遊び方、勝利条件を紹介します。',
   openGraph: {
     type: 'article',
     url: 'https://nonaga.riverapp.jp/about/',
-    title: 'NONAGAについて | 盤面が動く六角戦略ボードゲーム',
-    description: '盤面そのものを動かせる六角戦略ボードゲーム、NONAGAのルールと特徴を紹介。',
+    title: 'Hexlideについて | 盤面が動く六角戦略ボードゲーム',
+    description: '盤面そのものを動かせる六角戦略ボードゲーム、Hexlideのルールと特徴を紹介。',
     images: [{ url: 'https://nonaga.riverapp.jp/og-image.png', width: 1200, height: 630 }],
     locale: 'ja_JP',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NONAGAについて | 盤面が動く六角戦略ボードゲーム',
-    description: '盤面そのものを動かせる六角戦略ボードゲーム、NONAGAのルールと特徴を紹介。',
+    title: 'Hexlideについて | 盤面が動く六角戦略ボードゲーム',
+    description: '盤面そのものを動かせる六角戦略ボードゲーム、Hexlideのルールと特徴を紹介。',
     images: ['https://nonaga.riverapp.jp/og-image.png'],
   },
   alternates: {
@@ -44,9 +44,9 @@ export default function AboutPage() {
         <Link href="/en/about" style={{ color: '#4f46e5', textDecoration: 'none' }}>English</Link>
       </nav>
 
-      <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', marginTop: '1.5rem' }}>NONAGAについて</h1>
+      <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', marginTop: '1.5rem' }}>Hexlideについて</h1>
       <p style={{ fontSize: '1.05rem', color: '#1e293b' }}>
-        NONAGAは、六角形（ヘックス）の盤面を動かしながら戦う2人対戦の戦略ボードゲームです。
+        Hexlideは、六角形（ヘックス）の盤面を動かしながら戦う2人対戦の戦略ボードゲームです。
         コマの移動に加えて盤面タイル自体も動かせるため、毎手が読み合いになるのが特徴です。
       </p>
 
