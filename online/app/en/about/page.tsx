@@ -6,23 +6,23 @@ export const metadata: Metadata = {
   description: 'Learn the rules, win conditions, and unique board-moving mechanics of Hexlide, a tactical hex strategy game.',
   openGraph: {
     type: 'article',
-    url: 'https://nonaga.riverapp.jp/en/about/',
+    url: 'https://hexlide.riverapp.jp/en/about/',
     title: 'About Hexlide | Move-the-board Hex Strategy Game',
     description: 'Learn the rules, win conditions, and unique board-moving mechanics of Hexlide.',
-    images: [{ url: 'https://nonaga.riverapp.jp/og-image.png', width: 1200, height: 630 }],
+    images: [{ url: 'https://hexlide.riverapp.jp/og-image.png', width: 1200, height: 630 }],
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'About Hexlide | Move-the-board Hex Strategy Game',
     description: 'Learn the rules, win conditions, and unique board-moving mechanics of Hexlide.',
-    images: ['https://nonaga.riverapp.jp/og-image.png'],
+    images: ['https://hexlide.riverapp.jp/og-image.png'],
   },
   alternates: {
-    canonical: 'https://nonaga.riverapp.jp/en/about/',
+    canonical: 'https://hexlide.riverapp.jp/en/about/',
     languages: {
-      ja: 'https://nonaga.riverapp.jp/about/',
-      en: 'https://nonaga.riverapp.jp/en/about/',
+      ja: 'https://hexlide.riverapp.jp/about/',
+      en: 'https://hexlide.riverapp.jp/en/about/',
     },
   },
 };

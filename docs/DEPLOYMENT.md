@@ -356,13 +356,13 @@ Amplify Hosting（自動検知）
 
 ### 2.4 カスタムドメイン設定
 
-**ドメイン**: `nonaga.riverapp.jp`
+**ドメイン**: `hexlide.riverapp.jp`
 
 **設定手順**:
 1. Amplify Console → 「ドメイン管理」
-2. カスタムドメイン追加: `nonaga.riverapp.jp`
+2. カスタムドメイン追加: `hexlide.riverapp.jp`
 3. DNS設定（Route 53 または外部DNS）:
-   - CNAME: `nonaga.riverapp.jp` → Amplifyのデフォルトドメイン
+   - CNAME: `hexlide.riverapp.jp` → Amplifyのデフォルトドメイン
 
 **HTTPS**:
 - AWS Certificate Managerで自動証明書発行

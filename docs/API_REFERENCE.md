@@ -753,7 +753,7 @@ const res = await fetch(`/api/game/room/${digitsOnly}`);
 - ✅ URLの長さを気にしない
 
 **URL方式（従来）**:
-- ❌ 長い（例: `https://nonaga.riverapp.jp/game/a1b2c3d4-e5f6-...`）
+- ❌ 長い（例: `https://hexlide.riverapp.jp/game/a1b2c3d4-e5f6-...`）
 - ❌ コピー＆ペースト必須
 - ✅ ワンクリックで参加可能
 

@@ -763,7 +763,7 @@ console.log('Move executed', {
 
 **NONAGAプロジェクト**:
 - GitHub: `https://github.com/Yuuga2001/nonaga`
-- 本番URL: `https://nonaga.riverapp.jp/`
+- 本番URL: `https://hexlide.riverapp.jp/`
 
 ---
 

@@ -10,9 +10,9 @@ NONAGA is a strategic hexagonal board game with three game modes:
 - **Online game**: Next.js 15 + React 19 application (`/online/`) with AWS AppSync for real-time multiplayer, room code matchmaking
 
 Play URLs:
-- Production: https://nonaga.riverapp.jp/ — root route serves LocalGameClient (Next.js)
-- Online lobby: https://nonaga.riverapp.jp/online/
-- Local (Next.js, alternate): https://nonaga.riverapp.jp/online/local — duplicate route for backward compatibility
+- Production: https://hexlide.riverapp.jp/ — root route serves LocalGameClient (Next.js)
+- Online lobby: https://hexlide.riverapp.jp/online/
+- Local (Next.js, alternate): https://hexlide.riverapp.jp/online/local — duplicate route for backward compatibility
 
 **Note**: Vanilla version (`index.html`) is NOT deployed to Amplify. It exists in the repository for development purposes only and can be accessed via `npx serve .` locally.
 

@@ -6,23 +6,23 @@ export const metadata: Metadata = {
   description: 'Hexlideは盤面そのものを動かせる六角戦略ボードゲーム。ルール、遊び方、勝利条件を紹介します。',
   openGraph: {
     type: 'article',
-    url: 'https://nonaga.riverapp.jp/about/',
+    url: 'https://hexlide.riverapp.jp/about/',
     title: 'Hexlideについて | 盤面が動く六角戦略ボードゲーム',
     description: '盤面そのものを動かせる六角戦略ボードゲーム、Hexlideのルールと特徴を紹介。',
-    images: [{ url: 'https://nonaga.riverapp.jp/og-image.png', width: 1200, height: 630 }],
+    images: [{ url: 'https://hexlide.riverapp.jp/og-image.png', width: 1200, height: 630 }],
     locale: 'ja_JP',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Hexlideについて | 盤面が動く六角戦略ボードゲーム',
     description: '盤面そのものを動かせる六角戦略ボードゲーム、Hexlideのルールと特徴を紹介。',
-    images: ['https://nonaga.riverapp.jp/og-image.png'],
+    images: ['https://hexlide.riverapp.jp/og-image.png'],
   },
   alternates: {
-    canonical: 'https://nonaga.riverapp.jp/about/',
+    canonical: 'https://hexlide.riverapp.jp/about/',
     languages: {
-      ja: 'https://nonaga.riverapp.jp/about/',
-      en: 'https://nonaga.riverapp.jp/en/about/',
+      ja: 'https://hexlide.riverapp.jp/about/',
+      en: 'https://hexlide.riverapp.jp/en/about/',
     },
   },
 };

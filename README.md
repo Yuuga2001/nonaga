@@ -9,7 +9,7 @@
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript)](https://www.typescriptlang.org/)
   [![AWS](https://img.shields.io/badge/AWS-AppSync%20%7C%20Lambda%20%7C%20DynamoDB-FF9900?logo=amazon-aws)](https://aws.amazon.com/)
 
-  <a href="https://nonaga.riverapp.jp">
+  <a href="https://hexlide.riverapp.jp">
     <img alt="今すぐプレイ" src="https://img.shields.io/badge/%F0%9F%8E%AE_%E4%BB%8A%E3%81%99%E3%81%90%E3%83%97%E3%83%AC%E3%82%A4-%E2%86%92-22C55E?style=for-the-badge" />
   </a>
 </div>
@@ -39,9 +39,9 @@
 
 | モード | 説明 | URL |
 |--------|------|-----|
-| **ローカルAI対戦** | 位置評価AIとの1人プレイ | [プレイ](https://nonaga.riverapp.jp/) |
-| **ローカル2人対戦** | 同じデバイスで2人プレイ | [プレイ](https://nonaga.riverapp.jp/) |
-| **オンライン対戦** | 6桁ルームコードで友達と対戦 | [ロビー](https://nonaga.riverapp.jp/online) |
+| **ローカルAI対戦** | 位置評価AIとの1人プレイ | [プレイ](https://hexlide.riverapp.jp/) |
+| **ローカル2人対戦** | 同じデバイスで2人プレイ | [プレイ](https://hexlide.riverapp.jp/) |
+| **オンライン対戦** | 6桁ルームコードで友達と対戦 | [ロビー](https://hexlide.riverapp.jp/online) |
 
 ### 🌟 特徴
 
@@ -463,7 +463,7 @@ NONAGAは**軸座標系（Axial Coordinates）**を使用:
 
 ## 📞 コンタクト
 
-- **プロジェクトURL**: https://nonaga.riverapp.jp/
+- **プロジェクトURL**: https://hexlide.riverapp.jp/
 - **GitHub**: https://github.com/Yuuga2001/nonaga
 - **Issues**: https://github.com/Yuuga2001/nonaga/issues
 
@@ -472,7 +472,7 @@ NONAGAは**軸座標系（Axial Coordinates）**を使用:
 <div align="center">
   <p>Made with ❤️ by the NONAGA Team</p>
   <p>
-    <a href="https://nonaga.riverapp.jp">プレイする</a> •
+    <a href="https://hexlide.riverapp.jp">プレイする</a> •
     <a href="./docs/README.md">ドキュメント</a> •
     <a href="https://github.com/Yuuga2001/nonaga/issues">バグ報告</a>
   </p>
