@@ -648,7 +648,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     return (
       <div className="game-container bg-slate">
         <header className="header">
-          <h1 className="game-title">Nonaga</h1>
+          <h1 className="game-title">Hexlide</h1>
         </header>
 
         <div className="waiting-container">
@@ -755,7 +755,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
       )}
       <header className="header">
         <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
-          <h1 className="game-title">Nonaga</h1>
+          <h1 className="game-title">Hexlide</h1>
           <div style={{
             fontSize: '0.65rem',
             fontWeight: 700,

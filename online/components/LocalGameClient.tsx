@@ -710,7 +710,7 @@ export default function LocalGameClient() {
             )}
             <header className="header" role="banner">
                 <div style={{display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
-                    <h1 className="game-title">Nonaga</h1>
+                    <h1 className="game-title">Hexlide</h1>
                     <div style={{
                         fontSize: '0.65rem',
                         fontWeight: 700,

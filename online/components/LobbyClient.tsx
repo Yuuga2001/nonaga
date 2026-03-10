@@ -93,7 +93,7 @@ export default function LobbyClient() {
   return (
     <div className="game-container bg-slate">
       <header className="header">
-        <h1 className="game-title">Nonaga</h1>
+        <h1 className="game-title">Hexlide</h1>
         <p style={{ color: '#94a3b8', marginTop: 4 }}>{strings.onlineTitle}</p>
       </header>
 
