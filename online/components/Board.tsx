@@ -21,6 +21,7 @@ interface BoardProps {
   animatingPiece: { id: string; x: number; y: number } | null;
   animatingTile: { index: number; x: number; y: number } | null;
   pieceMap: Map<string, Piece>;
+  movableTileIndices: Set<number>;
   isMyTurn: boolean;
   myColor: PlayerColor | null;
   onPieceClick: (piece: Piece) => void;
@@ -40,6 +41,7 @@ export default function Board({
   animatingPiece,
   animatingTile,
   pieceMap,
+  movableTileIndices,
   isMyTurn,
   myColor,
   onPieceClick,
@@ -95,7 +97,8 @@ export default function Board({
               !winner &&
               phase === 'move_tile' &&
               !pieceMap.has(key) &&
-              isMyTurn;
+              isMyTurn &&
+              movableTileIndices.has(i);
 
             let className = 'tile';
             if (isV) className += ` victory-tile ${winner}`;

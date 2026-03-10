@@ -280,6 +280,26 @@ export default function LocalGameClient() {
         pieces.forEach(p => map.set(coordsKey(p.q, p.r), p));
         return map;
     }, [pieces]);
+    // 盤面の連結性を保てるタイルのみハイライト対象
+    const movableTileIndices = useMemo(() => {
+        const set = new Set<number>();
+        if (winner || phase !== 'move_tile') return set;
+        tiles.forEach((t, idx) => {
+            if (pieceMap.has(coordsKey(t.q, t.r))) return;
+            const temp = tiles.filter((_, j) => j !== idx);
+            const vis = new Set([coordsKey(temp[0].q, temp[0].r)]);
+            const queue = [temp[0]];
+            while (queue.length > 0) {
+                const cur = queue.shift()!;
+                DIRECTIONS.forEach(d => {
+                    const k = coordsKey(cur.q+d.q, cur.r+d.r);
+                    if (temp.some(tt => coordsKey(tt.q, tt.r) === k) && !vis.has(k)) { vis.add(k); queue.push({q:cur.q+d.q, r:cur.r+d.r}); }
+                });
+            }
+            if (vis.size === temp.length) set.add(idx);
+        });
+        return set;
+    }, [tiles, pieces, phase, winner, pieceMap]);
     const hexToPixel = (q: number, r: number) => ({ x: HEX_SIZE * (3/2 * q), y: HEX_SIZE * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r) });
 
     const viewBounds = useMemo(() => {
@@ -375,18 +395,8 @@ export default function LocalGameClient() {
                 return lastValid;
             }).filter(Boolean) as { q: number; r: number }[];
             if (moves.some(m => m.q === tile.q && m.r === tile.r)) { setIsAnimating(true); animatePieceMove(selectedId, piece.q, piece.r, tile.q, tile.r); }
-        } else if (phase === 'move_tile' && !pieceMap.has(coordsKey(tile.q, tile.r))) {
-            const temp = tiles.filter((_, i) => i !== index);
-            const queue = [temp[0]], vis = new Set([coordsKey(temp[0].q, temp[0].r)]);
-            while(queue.length > 0) {
-                const cur = queue.shift()!;
-                DIRECTIONS.forEach(d => {
-                    const k = coordsKey(cur.q+d.q, cur.r+d.r);
-                    if(temp.some(t => coordsKey(t.q, t.r) === k) && !vis.has(k)) { vis.add(k); queue.push({q:cur.q+d.q, r:cur.r+d.r}); }
-                });
-            }
-            if (vis.size === temp.length) setSelectedId(index);
-            else alert(strings.alertBoardSplit);
+        } else if (phase === 'move_tile' && movableTileIndices.has(index)) {
+            setSelectedId(index);
         }
     };
 
@@ -808,7 +818,7 @@ export default function LocalGameClient() {
                             const isV = victoryLine.includes(key);
                             const isSelected = phase === 'move_tile' && selectedId === i;
                             const isDestHint = phase === 'move_token' && validDests.some(d => d.q === tile.q && d.r === tile.r);
-                            const isSelectableEmpty = !winner && phase === 'move_tile' && !pieceMap.has(key) && !isAnimating;
+                            const isSelectableEmpty = !winner && phase === 'move_tile' && !pieceMap.has(key) && !isAnimating && movableTileIndices.has(i);
                             return (
                                 <polygon key={`tile-${i}`} points="-34,-19 0,-38 34,-19 34,19 0,38 -34,19" transform={`translate(${pos.x}, ${pos.y})`}
                                     className={`tile ${isV ? `victory-tile ${winner}` : isSelected ? 'selected-origin' : isDestHint ? 'destination-hint' : isSelectableEmpty ? 'selectable-empty' : ''} ${winner && !isV ? 'faded' : ''}`}

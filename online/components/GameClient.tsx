@@ -207,6 +207,17 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
 
   const viewBounds = useMemo(() => calculateViewBounds(tiles), [tiles]);
 
+  // 盤面の連結性を保てるタイルのみハイライト対象
+  const movableTileIndices = useMemo(() => {
+    const set = new Set<number>();
+    if (winner || phase !== 'move_tile') return set;
+    tiles.forEach((_, idx) => {
+      if (pieceMap.has(coordsKey(tiles[idx].q, tiles[idx].r))) return;
+      if (isBoardConnected(tiles, idx)) set.add(idx);
+    });
+    return set;
+  }, [tiles, pieces, phase, winner, pieceMap]);
+
   const validDests = useMemo(() => {
     if (winner || isAnimating || !isMyTurn) return [];
 
@@ -534,15 +545,8 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         isAnimatingRef.current = true;
         animatePieceMoveLocal(selectedId, piece.q, piece.r, tile.q, tile.r);
       }
-    } else if (
-      phase === 'move_tile' &&
-      !pieceMap.has(coordsKey(tile.q, tile.r))
-    ) {
-      if (isBoardConnected(tiles, index)) {
-        setSelectedId(index);
-      } else {
-        alert(strings.alertBoardSplit);
-      }
+    } else if (phase === 'move_tile' && movableTileIndices.has(index)) {
+      setSelectedId(index);
     }
   };
 
@@ -851,6 +855,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         animatingPiece={animatingPiece}
         animatingTile={animatingTile}
         pieceMap={pieceMap}
+        movableTileIndices={movableTileIndices}
         isMyTurn={isMyTurn}
         myColor={myColor}
         onPieceClick={handlePieceClick}
