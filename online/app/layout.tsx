@@ -5,6 +5,10 @@ export const metadata: Metadata = {
   title: 'Hexlide Online - Hexagonal Board Game',
   description:
     'Play Hexlide online. Enjoy this strategic hexagonal board game with friends in real-time.',
+  icons: {
+    icon: '/favicon.png',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export const viewport: Viewport = {
