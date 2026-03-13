@@ -621,6 +621,8 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
     setLang((prev) => (prev === 'en' ? 'ja' : 'en'));
   };
 
+  const aboutUrl = lang === 'en' ? '/en/about/' : '/about/';
+
   // Loading state
   if (loading) {
     return (
@@ -863,7 +865,7 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
         onDestinationClick={handleDestinationClick}
       />
 
-      <aside className="rules-container">
+      <aside className="rules-container" role="complementary" aria-label={strings.rulesLabel}>
         <div className="rules-card">
           <div className="goal-box">
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%', gap: '0.5rem' }}>
@@ -876,16 +878,25 @@ export default function GameClient({ gameId, initialGame }: GameClientProps) {
                   border: 'none',
                   cursor: 'pointer',
                   textDecoration: 'underline',
+                  padding: 0,
+                  font: 'inherit',
+                  color: 'inherit',
                 }}
               >
                 {lang === 'en' ? '日本語に変更' : 'Change to English'}
               </button>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: 16 }}>&#127942;</span>
+              <a
+                href={aboutUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'inherit' }}
+              >
+                <span style={{ fontSize: 16 }}>🏆</span>
                 <div>
-                  <p>{strings.goal}</p>
+                  <p style={{ margin: 0 }}>{strings.goal}</p>
+                  <p className="goal-hint" style={{ margin: 0 }}>{strings.goalHint}</p>
                 </div>
-              </div>
+              </a>
             </div>
           </div>
         </div>
