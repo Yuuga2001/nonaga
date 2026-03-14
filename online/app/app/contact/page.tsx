@@ -38,7 +38,7 @@ export default function ContactPage() {
       <p style={{ marginBottom: '2rem' }}>{t.description}</p>
 
       <a
-        href="https://docs.google.com/forms/d/e/PLACEHOLDER/viewform"
+        href="https://forms.gle/oUp6JhYhTW7TF4qY6"
         target="_blank"
         rel="noopener noreferrer"
         style={{
