@@ -2,7 +2,7 @@
 
 body {
     -webkit-tap-highlight-color: transparent;
-    background-color: #f8fafc;
+    background-color: #eef2f7;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     min-height: 100dvh;
     overflow-y: auto;
@@ -31,7 +31,7 @@ body {
 
 .game-container.bg-rose { background-color: #fff1f2; }
 .game-container.bg-indigo { background-color: #eef2ff; }
-.game-container.bg-slate { background-color: #f8fafc; }
+.game-container.bg-slate { background-color: #eef2f7; }
 
 .header { position: static; padding: 0.5rem 1rem; padding-top: calc(0.5rem + env(safe-area-inset-top)); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; pointer-events: auto; }
 .game-title { font-size: 1.1rem; font-weight: 900; color: #1e293b; font-style: italic; text-transform: uppercase; letter-spacing: 0.3em; }
@@ -73,7 +73,7 @@ body {
 
 .board-svg { width: 100%; height: 100%; max-height: 600px; max-width: 600px; overflow: visible; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); }
 
-.tile { transition: all 0.8s ease; fill: white; stroke: #e2e8f0; stroke-width: 1px; }
+.tile { transition: all 0.8s ease; fill: white; stroke: #cbd5e1; stroke-width: 1px; }
 .tile.selected-origin { fill: #fee2e2; stroke: #f43f5e; stroke-width: 2px; }
 .tile.destination-hint { fill: #f0fdf4; stroke: #34d399; stroke-dasharray: 2; }
 .tile.selectable-empty { fill: white; stroke: #fbbf24; stroke-width: 2px; animation: tile-glow 2s ease-in-out infinite; }
